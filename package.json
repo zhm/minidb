@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/fulcrumapp/minidb.git"
+    "url": "git://github.com/zhm/minidb.git"
   },
   "scripts": {
     "test": "npm run lint && node_modules/.bin/mocha ./test/setup.js test/sqlite/*.js test/postgres/*.js",
