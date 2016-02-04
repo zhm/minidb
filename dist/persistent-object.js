@@ -143,7 +143,7 @@ class PersistentObject {
   }
 
   updateTimestamps() {
-    const now = new Date().getTime();
+    const now = new Date();
 
     if (!this.createdAt) {
       this.createdAt = now;

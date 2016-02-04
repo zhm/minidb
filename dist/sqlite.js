@@ -152,6 +152,34 @@ class SQLite extends _database2.default {
       });
     })();
   }
+
+  toDatabase(value, column) {
+    if (value == null) {
+      return null;
+    }
+
+    switch (column.type) {
+      case 'datetime':
+        return value.getTime();
+
+      default:
+        return super.toDatabase(value, column);
+    }
+  }
+
+  fromDatabase(value, column) {
+    if (value == null) {
+      return null;
+    }
+
+    switch (column.type) {
+      case 'datetime':
+        return new Date(+value);
+
+      default:
+        return super.fromDatabase(value, column);
+    }
+  }
 }
 exports.default = SQLite;
 //# sourceMappingURL=sqlite.js.map

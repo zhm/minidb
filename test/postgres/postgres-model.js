@@ -17,8 +17,8 @@ CREATE TABLE users (
   age bigint NOT NULL,
   height double precision,
   birth_date date,
-  created_at double precision,
-  updated_at double precision
+  created_at timestamp without time zone NOT NULL,
+  updated_at timestamp without time zone NOT NULL
 );
 
 CREATE UNIQUE INDEX idx_user_email ON users (email);

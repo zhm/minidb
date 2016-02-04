@@ -19,8 +19,8 @@ CREATE TABLE users (
   age INTEGER NOT NULL,
   height REAL,
   birth_date REAL,
-  created_at REAL,
-  updated_at REAL
+  created_at REAL NOT NULL,
+  updated_at REAL NOT NULL
 );
 
 CREATE UNIQUE INDEX idx_user_email ON users (email);
