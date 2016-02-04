@@ -59,5 +59,7 @@ await db.execute(setupScript);
 
 const user = await User.findOrCreate(db, {name: 'John', email: 'john@example.com', age: 30});
 
+user.height = 72.3;
+
 await user.save();
 ```
