@@ -1,0 +1,30 @@
+name: 'create table'
+description: 'create a new table'
+
+old: [
+]
+
+new: [
+  [ 'users', [
+    [ 'id', 'pk' ]
+    [ 'age', 'integer', true ]
+    [ 'birth_date', 'date', true ]
+    [ 'name', 'string', true ]
+    [ 'address', 'text', true ]
+    [ 'height', 'double', true ]
+    [ 'desc', 'string', true ]
+    [ 'created_at', 'timestamp', false ]
+  ] ]
+]
+
+diff: [
+  [ type: 'create-table' ]
+]
+
+postgres: '''
+CREATE TABLE IF NOT EXISTS "organization_1"."users" ("id" bigserial NOT NULL, "age" bigint, "birth_date" float, "name" text, "address" text, "height" float, "desc" text, "created_at" timestamp without time zone NOT NULL);
+'''
+
+sqlite: '''
+CREATE TABLE IF NOT EXISTS `account_1_users` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `age` INTEGER, `birth_date` REAL, `name` TEXT, `address` TEXT, `height` REAL, `desc` TEXT, `created_at` REAL NOT NULL);
+'''

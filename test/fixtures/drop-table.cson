@@ -1,0 +1,29 @@
+name: 'drop table'
+description: 'drop a table'
+
+old: [
+  [ 'users', [
+    [ 'id', 'pk' ]
+    [ 'age', 'integer', true ]
+    [ 'birth_date', 'date', true ]
+    [ 'name', 'string', true ]
+    [ 'address', 'text', true ]
+    [ 'height', 'double', true ]
+    [ 'desc', 'string', true ]
+    [ 'created_at', 'timestamp', false ]
+  ] ]
+]
+
+new: [ ]
+
+diff: [
+  [ type: 'drop-table' ]
+]
+
+postgres: '''
+DROP TABLE IF EXISTS "organization_1"."users" CASCADE;
+'''
+
+sqlite: '''
+DROP TABLE IF EXISTS `account_1_users`;
+'''

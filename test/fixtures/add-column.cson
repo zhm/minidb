@@ -1,0 +1,32 @@
+name: 'add column'
+description: 'adds new columns to a table'
+
+old: [
+  [ 'users', [
+    [ 'id', 'pk' ]
+    [ 'name', 'string' ]
+  ] ]
+]
+
+new: [
+  [ 'users', [
+    [ 'id', 'pk' ]
+    [ 'name', 'string' ]
+    [ 'desc', 'string' ]
+    [ 'age', 'integer' ]
+  ] ]
+]
+
+diff: [
+  [ type: 'add-column' ]
+]
+
+postgres: '''
+ALTER TABLE "organization_1"."users" ADD COLUMN "desc" text;
+ALTER TABLE "organization_1"."users" ADD COLUMN "age" bigint;
+'''
+
+sqlite: '''
+ALTER TABLE `account_1_users` ADD COLUMN `desc` TEXT;
+ALTER TABLE `account_1_users` ADD COLUMN `age` INTEGER;
+'''

@@ -1,0 +1,53 @@
+name: 'rename column'
+description: 'renames a column, which currently always results in a full re-create'
+
+# Right now both sqlite and postgres inherit the SQLite limitation of not being able to rename columns
+# at some point it can be changed so that the postgres generator can use the ALTER TABLE syntax to rename
+# the column directly. It's not a huge issue since re-creating the table will always work.
+# Since correctness is the primary goal, this isn't a huge issue except for performance.
+
+old: [
+  [ 'users', [
+    [ 'id', 'pk' ]
+    [ 'age', 'integer', true ]
+    [ 'birth_date', 'date', true ]
+    [ 'name', 'string', true ]
+    [ 'address', 'text', true ]
+    [ 'height', 'double', true ]
+    [ 'desc', 'string', true ]
+    [ 'created_at', 'timestamp', false ]
+  ] ]
+]
+
+new: [
+  [ 'users', [
+    [ 'id', 'pk' ]
+    [ 'age', 'integer', true ]
+    [ 'birth_date', 'date', true ]
+    [ 'name', 'string', true ]
+    [ 'address', 'text', true ]
+    [ 'height', 'double', true ]
+    [ 'desc', 'new_desc', 'string', true ]
+    [ 'created_at', 'timestamp', false ]
+  ] ]
+]
+
+diff: [
+  [ type: 'rename-column' ]
+]
+
+postgres: '''
+CREATE TABLE IF NOT EXISTS "organization_1"."tmp_new_users" ("id" bigserial NOT NULL, "age" bigint, "birth_date" float, "name" text, "address" text, "height" float, "new_desc" text, "created_at" timestamp without time zone NOT NULL);
+INSERT INTO "organization_1"."tmp_new_users" ("id", "age", "birth_date", "name", "address", "height", "new_desc", "created_at") SELECT "id", "age", "birth_date", "name", "address", "height", "desc", "created_at" FROM "organization_1"."users";
+ALTER TABLE "organization_1"."users" RENAME TO "tmp_old_users";
+ALTER TABLE "organization_1"."tmp_new_users" RENAME TO "users";
+DROP TABLE IF EXISTS "organization_1"."tmp_old_users" CASCADE;
+'''
+
+sqlite: '''
+CREATE TABLE IF NOT EXISTS `account_1_tmp_new_users` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `age` INTEGER, `birth_date` REAL, `name` TEXT, `address` TEXT, `height` REAL, `new_desc` TEXT, `created_at` REAL NOT NULL);
+INSERT INTO `account_1_tmp_new_users` (`id`, `age`, `birth_date`, `name`, `address`, `height`, `new_desc`, `created_at`) SELECT `id`, `age`, `birth_date`, `name`, `address`, `height`, `desc`, `created_at` FROM `account_1_users`;
+ALTER TABLE `account_1_users` RENAME TO `account_1_tmp_old_users`;
+ALTER TABLE `account_1_tmp_new_users` RENAME TO `account_1_users`;
+DROP TABLE IF EXISTS `account_1_tmp_old_users`;
+'''

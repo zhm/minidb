@@ -1,0 +1,25 @@
+name: 'geometry columns'
+description: 'should support geometry columns'
+
+old: [
+]
+
+new: [
+  [ 'users', [
+    [ 'id', 'pk' ]
+    [ 'geom',  'geometry', true ]
+  ] ]
+]
+
+diff: [
+  [ type: 'create-table' ]
+]
+
+postgres: '''
+CREATE TABLE IF NOT EXISTS "organization_1"."users" ("id" bigserial NOT NULL, "geom" geometry(Geometry, 4326));
+'''
+
+# SQLite stores geometries as text currently, perhaps a SpatiaLite dialect could do more
+sqlite: '''
+CREATE TABLE IF NOT EXISTS `account_1_users` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `geom` TEXT);
+'''

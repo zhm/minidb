@@ -1,0 +1,25 @@
+name: 'not null columns'
+description: 'should support not-null columns'
+
+old: [
+]
+
+new: [
+  [ 'users', [
+    [ 'id', 'pk' ]
+    [ 'age_required',  'integer', false ]
+    [ 'age_nrequired', 'integer', true ]
+  ] ]
+]
+
+diff: [
+  [ type: 'create-table' ]
+]
+
+postgres: '''
+CREATE TABLE IF NOT EXISTS "organization_1"."users" ("id" bigserial NOT NULL, "age_required" bigint NOT NULL, "age_nrequired" bigint);
+'''
+
+sqlite: '''
+CREATE TABLE IF NOT EXISTS `account_1_users` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `age_required` INTEGER NOT NULL, `age_nrequired` INTEGER);
+'''

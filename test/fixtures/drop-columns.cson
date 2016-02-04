@@ -1,0 +1,41 @@
+name: 'drop columns'
+description: 'it recreates the table when columns are dropped'
+
+old: [
+  [ 'users', [
+    [ 'id', 'pk' ]
+    [ 'name', 'string', true ]
+    [ 'desc', 'string', true ]
+    [ 'age', 'double', true ]
+    [ 'height', 'integer', true ]
+  ] ]
+]
+
+new: [
+  [ 'users', [
+    [ 'id', 'pk' ]
+    [ 'name', 'string', true ]
+    [ 'age', 'double', true ]
+  ] ]
+]
+
+diff: [
+  [ type: 'recreate-table' ]
+]
+
+postgres: '''
+CREATE TABLE IF NOT EXISTS "organization_1"."tmp_new_users" ("id" bigserial NOT NULL, "name" text, "age" float);
+INSERT INTO "organization_1"."tmp_new_users" ("id", "name", "age") SELECT "id", "name", "age" FROM "organization_1"."users";
+ALTER TABLE "organization_1"."users" RENAME TO "tmp_old_users";
+ALTER TABLE "organization_1"."tmp_new_users" RENAME TO "users";
+DROP TABLE IF EXISTS "organization_1"."tmp_old_users" CASCADE;
+'''
+
+sqlite: '''
+CREATE TABLE IF NOT EXISTS `account_1_tmp_new_users` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT, `age` REAL);
+INSERT INTO `account_1_tmp_new_users` (`id`, `name`, `age`) SELECT `id`, `name`, `age` FROM `account_1_users`;
+ALTER TABLE `account_1_users` RENAME TO `account_1_tmp_old_users`;
+ALTER TABLE `account_1_tmp_new_users` RENAME TO `account_1_users`;
+DROP TABLE IF EXISTS `account_1_tmp_old_users`;
+'''
+
