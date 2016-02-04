@@ -1,4 +1,4 @@
-# minidb [![Build Status](https://travis-ci.org/fulcrumapp/minidb.svg?branch=master)](https://travis-ci.org/fulcrumapp/minidb)
+# minidb [![Build Status](https://travis-ci.org/zhm/minidb.svg?branch=master)](https://travis-ci.org/zhm/minidb)
 
 A small object wrapper for PostgreSQL and SQLite. It has very little sugar and is intentionally low-level. It does not do migrations, relationships, identity management, or any other magic.
 
