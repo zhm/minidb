@@ -1,8 +1,8 @@
 {
   "name": "minidb",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Mini ORM",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "repository": {
     "type": "git",
     "url": "git://github.com/zhm/minidb.git"
