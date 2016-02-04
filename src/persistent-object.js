@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import {format} from 'util';
 
 const models = [];
@@ -150,10 +149,8 @@ export default class PersistentObject {
       this.updateTimestamps();
     }
 
-    _.merge(values, {
-      created_at: this.createdAt,
-      updated_at: this.updatedAt
-    });
+    values.created_at = this.createdAt;
+    values.updated_at = this.updatedAt;
 
     if (!this.isPersisted) {
       this.id = await this.db.insert(this.constructor.tableName, values, {pk: 'id'});
