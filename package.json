@@ -17,6 +17,7 @@
   "author": "Zac McCormick <zac.mccormick@gmail.com> (http://github.com/zhm)",
   "license": "BSD",
   "dependencies": {
+    "bluebird": "^3.2.1",
     "minipg": "0.0.9",
     "pg": "^4.4.3",
     "pg-format": "^1.0.1"
