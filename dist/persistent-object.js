@@ -172,8 +172,8 @@ class PersistentObject {
         _this.updateTimestamps();
       }
 
-      values.created_at = _this.createdAt;
-      values.updated_at = _this.updatedAt;
+      values.created_at = _this.db.toDatabase(_this.createdAt, { type: 'datetime' });
+      values.updated_at = _this.db.toDatabase(_this.updatedAt, { type: 'datetime' });
 
       if (!_this.isPersisted) {
         _this.id = yield _this.db.insert(_this.constructor.tableName, values, { pk: 'id' });

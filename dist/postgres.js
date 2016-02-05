@@ -186,6 +186,34 @@ class Postgres extends _database2.default {
       return +result[0].id;
     })();
   }
+
+  toDatabase(value, column) {
+    if (value == null) {
+      return null;
+    }
+
+    switch (column.type) {
+      case 'datetime':
+        return value.toISOString();
+
+      default:
+        return super.toDatabase(value, column);
+    }
+  }
+
+  fromDatabase(value, column) {
+    if (value == null) {
+      return null;
+    }
+
+    switch (column.type) {
+      case 'datetime':
+        return new Date(value);
+
+      default:
+        return super.fromDatabase(value, column);
+    }
+  }
 }
 exports.default = Postgres;
 //# sourceMappingURL=postgres.js.map
