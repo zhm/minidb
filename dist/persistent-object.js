@@ -178,7 +178,7 @@ class PersistentObject {
       if (!_this.isPersisted) {
         _this.id = yield _this.db.insert(_this.constructor.tableName, values, { pk: 'id' });
       } else {
-        yield _this.db.update(_this.constructor.tableName, { id: _this.id }, _this.changes);
+        yield _this.db.update(_this.constructor.tableName, { id: _this.id }, values);
       }
 
       // It's not possible to override `async` methods currently (and be able to use `super`)
