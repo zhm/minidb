@@ -140,4 +140,32 @@ export default class Postgres extends Database {
 
     return +result[0].id;
   }
+
+  toDatabase(value, column) {
+    if (value == null) {
+      return null;
+    }
+
+    switch (column.type) {
+      case 'datetime':
+        return value.toISOString();
+
+      default:
+        return super.toDatabase(value, column);
+    }
+  }
+
+  fromDatabase(value, column) {
+    if (value == null) {
+      return null;
+    }
+
+    switch (column.type) {
+      case 'datetime':
+        return new Date(value);
+
+      default:
+        return super.fromDatabase(value, column);
+    }
+  }
 }

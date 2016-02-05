@@ -104,5 +104,25 @@ export default function models(driver, context, setup, teardown) {
 
       (await User.count(db)).should.eql(0);
     }));
+
+    it('updates the timestamps properly', mochaAsync(async () => {
+      const {db} = context;
+
+      const user = await User.findOrCreate(db, {name: 'John', email: 'john@example.com', age: 30});
+      await user.save();
+
+      const createdAt = user.createdAt;
+
+      user.createdAt.should.not.be.null;
+      user.updatedAt.should.eql(user.createdAt);
+
+      await new Promise((resolve, reject) => {
+        setTimeout(resolve, 1);
+      });
+
+      await user.save();
+
+      user.updatedAt.toISOString().should.not.eql(createdAt.toISOString());
+    }));
   });
 }

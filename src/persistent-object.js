@@ -149,8 +149,8 @@ export default class PersistentObject {
       this.updateTimestamps();
     }
 
-    values.created_at = this.createdAt;
-    values.updated_at = this.updatedAt;
+    values.created_at = this.db.toDatabase(this.createdAt, {type: 'datetime'});
+    values.updated_at = this.db.toDatabase(this.updatedAt, {type: 'datetime'});
 
     if (!this.isPersisted) {
       this.id = await this.db.insert(this.constructor.tableName, values, {pk: 'id'});
