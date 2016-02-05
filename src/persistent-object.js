@@ -155,7 +155,7 @@ export default class PersistentObject {
     if (!this.isPersisted) {
       this.id = await this.db.insert(this.constructor.tableName, values, {pk: 'id'});
     } else {
-      await this.db.update(this.constructor.tableName, {id: this.id}, this.changes);
+      await this.db.update(this.constructor.tableName, {id: this.id}, values);
     }
 
     // It's not possible to override `async` methods currently (and be able to use `super`)
