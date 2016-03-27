@@ -114,9 +114,9 @@ export default class Postgres extends Database {
       const value = attributes[key];
 
       if (Array.isArray(value)) {
-        placeholders.push(pgformat('ARRAY[%L]', attributes[key]));
+        placeholders.push(pgformat('ARRAY[%L]', value));
       } else {
-        placeholders.push(pgformat('%L', attributes[key]));
+        placeholders.push(pgformat('%L', value));
       }
     }
 
@@ -128,7 +128,13 @@ export default class Postgres extends Database {
     const values = [];
 
     for (const key of Object.keys(attributes)) {
-      sets.push(pgformat('%I = %L', key, attributes[key]));
+      const value = attributes[key];
+
+      if (Array.isArray(value)) {
+        sets.push(pgformat('%I = ARRAY[%L]', key, value));
+      } else {
+        sets.push(pgformat('%I = %L', key, value));
+      }
     }
 
     return [sets, values];
