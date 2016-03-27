@@ -4,10 +4,6 @@ import Mixin from 'mixmatch';
 const models = [];
 
 export default class PersistentObject extends Mixin {
-  // constructor(db, attributes) {
-  //   this.initializePersistentObject(db, attributes);
-  // }
-
   get db() {
     return this._db;
   }
@@ -18,14 +14,7 @@ export default class PersistentObject extends Mixin {
 
   initializePersistentObject(db, attributes) {
     this._db = db;
-
-    if (attributes) {
-      this.updateFromDatabaseAttributes(attributes);
-    }
-
-    // this.id = null;
-    // this.createdAt = null;
-    // this.updatedAt = null;
+    this.updateFromDatabaseAttributes(attributes || {});
 
     return this;
   }
