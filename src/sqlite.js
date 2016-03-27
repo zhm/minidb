@@ -10,7 +10,7 @@ export default class SQLite extends Database {
     const defaultMode = sqlite.OPEN_READWRITE | sqlite.OPEN_CREATE;
 
     const promise = new Promise((resolve, reject) => {
-      const db = new sqlite.Database(file, mode != null ? mode : defaultMode, function (err) {
+      const db = new sqlite.Database(file, mode != null ? mode : defaultMode, (err) => {
         if (err) {
           reject(err);
         } else {
@@ -38,7 +38,7 @@ export default class SQLite extends Database {
     const self = this;
 
     const promise = new Promise((resolve, reject) => {
-      self.db.close(function (err) {
+      self.db.close((err) => {
         if (err) {
           reject(err);
         } else {
@@ -59,7 +59,7 @@ export default class SQLite extends Database {
       let index = -1;
       let columns = null;
 
-      const cb = function (err, row) {
+      const cb = (err, row) => {
         if (err) {
           return reject(err);
         }
@@ -70,10 +70,10 @@ export default class SQLite extends Database {
           columns = Object.keys(row);
         }
 
-        callback(columns, row, index);
+        return callback(columns, row, index);
       };
 
-      const complete = function (err) {
+      const complete = (err) => {
         if (err) {
           return reject(err);
         } else {
@@ -94,19 +94,19 @@ export default class SQLite extends Database {
   async execute(sql, params) {
     params = params || [];
 
-    const self = this;
-
     return new Promise((resolve, reject) => {
-      if (self.verbose) {
+      if (this.verbose) {
         console.log(sql, params);
       }
 
-      self.db.run(sql, params, function (err) {
+      const self = this;
+
+      this.db.run(sql, params, function(err) {
         if (err) {
           self.lastID = null;
           self.changes = null;
 
-          if (self.verbose) {
+          if (this.verbose) {
             console.error('ERROR', err);
           }
 

@@ -3,29 +3,39 @@ import {format} from 'util';
 const models = [];
 
 export default class PersistentObject {
-  constructor(db, attributes) {
-    this.initializePersistentObject(db, attributes);
+  // constructor(db, attributes) {
+  //   this.initializePersistentObject(db, attributes);
+  // }
+
+  get db() {
+    return this._db;
+  }
+
+  get rowID() {
+    return this._rowID;
   }
 
   initializePersistentObject(db, attributes) {
-    this.db = db;
+    this._db = db;
 
     if (attributes) {
       this.updateFromDatabaseAttributes(attributes);
     }
 
-    this.id = null;
-    this.createdAt = null;
-    this.updatedAt = null;
+    // this.id = null;
+    // this.createdAt = null;
+    // this.updatedAt = null;
+
+    return this;
   }
 
   static async findFirst(ModelClass, db, attributes) {
     const row = await db.findFirstByAttributes(ModelClass.tableName, null, attributes);
 
     if (row) {
-      const instance = new ModelClass(db);
+      const instance = new ModelClass();
 
-      instance.updateFromDatabaseAttributes(row);
+      instance.initializePersistentObject(db, row);
 
       return instance;
     }
@@ -37,8 +47,10 @@ export default class PersistentObject {
     const rows = await db.findAllByAttributes(ModelClass.tableName, null, attributes, orderBy);
 
     return rows.map((row) => {
-      const instance = new ModelClass(db);
-      instance.updateFromDatabaseAttributes(row);
+      const instance = new ModelClass();
+
+      instance.initializePersistentObject(db, row);
+
       return instance;
     });
   }
@@ -46,9 +58,17 @@ export default class PersistentObject {
   static async findOrCreate(ModelClass, db, attributes) {
     const row = await db.findFirstByAttributes(ModelClass.tableName, null, attributes);
 
-    const instance = new ModelClass(db);
+    const instance = new ModelClass();
 
-    instance.updateFromDatabaseAttributes(row || attributes);
+    instance.initializePersistentObject(db, row || attributes);
+
+    return instance;
+  }
+
+  static create(ModelClass, db, attributes) {
+    const instance = new ModelClass();
+
+    instance.initializePersistentObject(db, attributes);
 
     return instance;
   }
@@ -60,7 +80,7 @@ export default class PersistentObject {
   }
 
   static get modelMethods() {
-    return ['findFirst', 'findAll', 'findOrCreate', 'count'];
+    return ['findFirst', 'findAll', 'findOrCreate', 'create', 'count'];
   }
 
   static get models() {
@@ -71,7 +91,7 @@ export default class PersistentObject {
     models.push(modelClass);
 
     const wrap = (method) => {
-      return function (...params) {
+      return function(...params) {
         const args = [modelClass].concat(params);
         return PersistentObject[method].apply(PersistentObject, args);
       };
@@ -94,7 +114,7 @@ export default class PersistentObject {
       this[name] = this.db.fromDatabase(value, column);
     }
 
-    this.id = this.toNumber(attributes.id);
+    this._rowID = this.toNumber(attributes.id);
   }
 
   get databaseValues() {
@@ -133,7 +153,7 @@ export default class PersistentObject {
   }
 
   get isPersisted() {
-    return this.id > 0;
+    return this.rowID > 0;
   }
 
   async save(options) {
@@ -153,9 +173,9 @@ export default class PersistentObject {
     values.updated_at = this.db.toDatabase(this.updatedAt, {type: 'datetime'});
 
     if (!this.isPersisted) {
-      this.id = await this.db.insert(this.constructor.tableName, values, {pk: 'id'});
+      this._rowID = await this.db.insert(this.constructor.tableName, values, {pk: 'id'});
     } else {
-      await this.db.update(this.constructor.tableName, {id: this.id}, values);
+      await this.db.update(this.constructor.tableName, {id: this.rowID}, values);
     }
 
     // It's not possible to override `async` methods currently (and be able to use `super`)
@@ -170,9 +190,9 @@ export default class PersistentObject {
     options = options || {};
 
     if (this.isPersisted) {
-      await this.db.delete(this.constructor.tableName, {id: this.id});
+      await this.db.delete(this.constructor.tableName, {id: this.rowID});
 
-      this.id = null;
+      this._rowID = null;
       this.createdAt = null;
       this.updatedAt = null;
     }
@@ -193,7 +213,7 @@ export default class PersistentObject {
   setOne(name, instance) {
     if (instance) {
       this['_' + name] = instance;
-      this[name + 'ID'] = instance.id;
+      this[name + 'ID'] = instance.rowID;
     } else {
       this['_' + name] = null;
       this[name + 'ID'] = null;

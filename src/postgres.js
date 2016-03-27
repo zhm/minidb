@@ -10,7 +10,7 @@ import Database from './database';
 // number cannot fit in a JS Number, it can be casted to `text` in
 // the query and parsed manually. Without this, dead simple COUNT(*)
 // queries are returned as text and it makes doing simple things hard.
-pg.types.setTypeParser(20, function (val) {
+pg.types.setTypeParser(20, function(val) {
   return val == null ? null : parseInt(val, 10);
 });
 
@@ -26,9 +26,9 @@ export default class Postgres extends Database {
   async each(sql, params, callback) {
     const self = this;
 
-    const exec = function (client) {
+    const exec = function(client) {
       return new Promise((resolve, reject) => {
-        client.rawClient.query(sql).each(function (err, finished, columns, values, index) {
+        client.rawClient.query(sql).each(function(err, finished, columns, values, index) {
           if (err) {
             return reject(err);
           } else if (finished) {
@@ -57,7 +57,7 @@ export default class Postgres extends Database {
             }
           }
 
-          callback(columns, parsedValues, index);
+          return callback(columns, parsedValues, index);
         });
       });
     };
