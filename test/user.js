@@ -1,6 +1,6 @@
 import {PersistentObject} from '../src';
 
-export default class User extends PersistentObject {
+export default class User {
   static get tableName() {
     return 'users';
   }

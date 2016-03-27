@@ -1,8 +1,9 @@
 import {format} from 'util';
+import Mixin from 'mixmatch';
 
 const models = [];
 
-export default class PersistentObject {
+export default class PersistentObject extends Mixin {
   // constructor(db, attributes) {
   //   this.initializePersistentObject(db, attributes);
   // }
@@ -89,6 +90,8 @@ export default class PersistentObject {
 
   static register(modelClass) {
     models.push(modelClass);
+
+    PersistentObject.includeInto(modelClass);
 
     const wrap = (method) => {
       return function(...params) {
