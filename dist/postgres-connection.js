@@ -48,11 +48,11 @@ let connect = function () {
         const result = {
           rawClient: client,
 
-          query() {
+          query: function query() {
             const cursor = client.query.apply(client, arguments);
 
             return {
-              next() {
+              next: function next() {
                 return _asyncToGenerator(function* () {
                   return new _bluebird2.default(function (res, rej) {
                     cursor.next(function (err, finished, columns, values, index) {
@@ -60,13 +60,12 @@ let connect = function () {
                         return rej(err);
                       }
 
-                      res({ columns: columns, values: values });
+                      return res({ columns: columns, values: values });
                     });
                   });
                 })();
               },
-
-              close() {
+              close: function close() {
                 var _this = this;
 
                 return _asyncToGenerator(function* () {
@@ -82,15 +81,14 @@ let connect = function () {
               }
             };
           },
-
-          done() {
+          done: function done() {
             return _asyncToGenerator(function* () {
               pool.release(client);
             })();
           }
         };
 
-        resolve(result);
+        return resolve(result);
       });
     });
   });

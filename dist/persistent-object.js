@@ -6,25 +6,30 @@ Object.defineProperty(exports, "__esModule", {
 
 var _util = require('util');
 
+var _mixmatch = require('mixmatch');
+
+var _mixmatch2 = _interopRequireDefault(_mixmatch);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
 
 const models = [];
 
-class PersistentObject {
-  constructor(db, attributes) {
-    this.initializePersistentObject(db, attributes);
+class PersistentObject extends _mixmatch2.default {
+  get db() {
+    return this._db;
+  }
+
+  get rowID() {
+    return this._rowID;
   }
 
   initializePersistentObject(db, attributes) {
-    this.db = db;
+    this._db = db;
+    this.updateFromDatabaseAttributes(attributes || {});
 
-    if (attributes) {
-      this.updateFromDatabaseAttributes(attributes);
-    }
-
-    this.id = null;
-    this.createdAt = null;
-    this.updatedAt = null;
+    return this;
   }
 
   static findFirst(ModelClass, db, attributes) {
@@ -32,9 +37,9 @@ class PersistentObject {
       const row = yield db.findFirstByAttributes(ModelClass.tableName, null, attributes);
 
       if (row) {
-        const instance = new ModelClass(db);
+        const instance = new ModelClass();
 
-        instance.updateFromDatabaseAttributes(row);
+        instance.initializePersistentObject(db, row);
 
         return instance;
       }
@@ -48,8 +53,10 @@ class PersistentObject {
       const rows = yield db.findAllByAttributes(ModelClass.tableName, null, attributes, orderBy);
 
       return rows.map(function (row) {
-        const instance = new ModelClass(db);
-        instance.updateFromDatabaseAttributes(row);
+        const instance = new ModelClass();
+
+        instance.initializePersistentObject(db, row);
+
         return instance;
       });
     })();
@@ -59,12 +66,20 @@ class PersistentObject {
     return _asyncToGenerator(function* () {
       const row = yield db.findFirstByAttributes(ModelClass.tableName, null, attributes);
 
-      const instance = new ModelClass(db);
+      const instance = new ModelClass();
 
-      instance.updateFromDatabaseAttributes(row || attributes);
+      instance.initializePersistentObject(db, row || attributes);
 
       return instance;
     })();
+  }
+
+  static create(ModelClass, db, attributes) {
+    const instance = new ModelClass();
+
+    instance.initializePersistentObject(db, attributes);
+
+    return instance;
   }
 
   static count(ModelClass, db, attributes) {
@@ -76,7 +91,7 @@ class PersistentObject {
   }
 
   static get modelMethods() {
-    return ['findFirst', 'findAll', 'findOrCreate', 'count'];
+    return ['findFirst', 'findAll', 'findOrCreate', 'create', 'count'];
   }
 
   static get models() {
@@ -85,6 +100,8 @@ class PersistentObject {
 
   static register(modelClass) {
     models.push(modelClass);
+
+    PersistentObject.includeInto(modelClass);
 
     const wrap = method => {
       return function () {
@@ -103,8 +120,12 @@ class PersistentObject {
   }
 
   updateFromDatabaseAttributes(attributes) {
+    this._updateFromDatabaseAttributes(attributes);
+  }
+
+  _updateFromDatabaseAttributes(attributes) {
     for (const column of this.constructor.columns) {
-      const name = column.name;
+      const name = '_' + column.name;
       const value = attributes[column.column];
 
       // if (value == null && column[2] && column[2].null === false) {
@@ -114,7 +135,7 @@ class PersistentObject {
       this[name] = this.db.fromDatabase(value, column);
     }
 
-    this.id = this.toNumber(attributes.id);
+    this._rowID = this.toNumber(attributes.id);
   }
 
   get databaseValues() {
@@ -122,7 +143,7 @@ class PersistentObject {
 
     for (const column of this.constructor.columns) {
       const name = column.name;
-      const value = this[name];
+      const value = this['_' + name];
 
       if (value == null && column.null === false) {
         throw Error((0, _util.format)('column %s cannot be null', name));
@@ -153,7 +174,7 @@ class PersistentObject {
   }
 
   get isPersisted() {
-    return this.id > 0;
+    return this.rowID > 0;
   }
 
   save(options) {
@@ -176,9 +197,9 @@ class PersistentObject {
       values.updated_at = _this.db.toDatabase(_this.updatedAt, { type: 'datetime' });
 
       if (!_this.isPersisted) {
-        _this.id = yield _this.db.insert(_this.constructor.tableName, values, { pk: 'id' });
+        _this._rowID = yield _this.db.insert(_this.constructor.tableName, values, { pk: 'id' });
       } else {
-        yield _this.db.update(_this.constructor.tableName, { id: _this.id }, values);
+        yield _this.db.update(_this.constructor.tableName, { id: _this.rowID }, values);
       }
 
       // It's not possible to override `async` methods currently (and be able to use `super`)
@@ -197,9 +218,9 @@ class PersistentObject {
       options = options || {};
 
       if (_this2.isPersisted) {
-        yield _this2.db.delete(_this2.constructor.tableName, { id: _this2.id });
+        yield _this2.db.delete(_this2.constructor.tableName, { id: _this2.rowID });
 
-        _this2.id = null;
+        _this2._rowID = null;
         _this2.createdAt = null;
         _this2.updatedAt = null;
       }
@@ -212,23 +233,27 @@ class PersistentObject {
     var _this3 = this;
 
     return _asyncToGenerator(function* () {
-      if (_this3['_' + name]) {
-        return _this3['_' + name];
+      const ivar = '_' + name;
+
+      if (_this3[ivar]) {
+        return _this3[ivar];
       }
 
-      _this3['_' + name] = yield model.findFirst(_this3.db, { id: id || _this3[name + 'ID'] });
+      _this3[ivar] = yield model.findFirst(_this3.db, { id: id || _this3[ivar + 'RowID'] });
 
-      return _this3['_' + name];
+      return _this3[ivar];
     })();
   }
 
   setOne(name, instance) {
+    const ivar = '_' + name;
+
     if (instance) {
-      this['_' + name] = instance;
-      this[name + 'ID'] = instance.id;
+      this[ivar] = instance;
+      this[ivar + 'RowID'] = instance.rowID;
     } else {
-      this['_' + name] = null;
-      this[name + 'ID'] = null;
+      this[ivar] = null;
+      this[ivar + 'RowID'] = null;
     }
   }
 }

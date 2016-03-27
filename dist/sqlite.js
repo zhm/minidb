@@ -30,10 +30,11 @@ class SQLite extends _database2.default {
       const file = _options.file;
       const mode = _options.mode;
 
+
       const defaultMode = _sqlite2.default.OPEN_READWRITE | _sqlite2.default.OPEN_CREATE;
 
       const promise = new _bluebird2.default(function (resolve, reject) {
-        const db = new _sqlite2.default.Database(file, mode != null ? mode : defaultMode, function (err) {
+        const db = new _sqlite2.default.Database(file, mode != null ? mode : defaultMode, err => {
           if (err) {
             reject(err);
           } else {
@@ -65,7 +66,7 @@ class SQLite extends _database2.default {
       const self = _this2;
 
       const promise = new _bluebird2.default(function (resolve, reject) {
-        self.db.close(function (err) {
+        self.db.close(err => {
           if (err) {
             reject(err);
           } else {
@@ -87,7 +88,7 @@ class SQLite extends _database2.default {
       let index = -1;
       let columns = null;
 
-      const cb = function cb(err, row) {
+      const cb = (err, row) => {
         if (err) {
           return reject(err);
         }
@@ -98,10 +99,10 @@ class SQLite extends _database2.default {
           columns = Object.keys(row);
         }
 
-        callback(columns, row, index);
+        return callback(columns, row, index);
       };
 
-      const complete = function complete(err) {
+      const complete = err => {
         if (err) {
           return reject(err);
         } else {
@@ -125,14 +126,14 @@ class SQLite extends _database2.default {
     return _asyncToGenerator(function* () {
       params = params || [];
 
-      const self = _this3;
-
       return new _bluebird2.default(function (resolve, reject) {
-        if (self.verbose) {
+        if (_this3.verbose) {
           console.log(sql, params);
         }
 
-        self.db.run(sql, params, function (err) {
+        const self = _this3;
+
+        _this3.db.run(sql, params, function (err) {
           if (err) {
             self.lastID = null;
             self.changes = null;
