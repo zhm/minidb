@@ -95,8 +95,12 @@ export default class PersistentObject extends Mixin {
   }
 
   updateFromDatabaseAttributes(attributes) {
+    this._updateFromDatabaseAttributes(attributes);
+  }
+
+  _updateFromDatabaseAttributes(attributes) {
     for (const column of this.constructor.columns) {
-      const name = column.name;
+      const name = '_' + column.name;
       const value = attributes[column.column];
 
       // if (value == null && column[2] && column[2].null === false) {
@@ -114,7 +118,7 @@ export default class PersistentObject extends Mixin {
 
     for (const column of this.constructor.columns) {
       const name = column.name;
-      const value = this[name];
+      const value = this['_' + name];
 
       if (value == null && column.null === false) {
         throw Error(format('column %s cannot be null', name));
@@ -193,22 +197,26 @@ export default class PersistentObject extends Mixin {
   }
 
   async loadOne(name, model, id) {
-    if (this['_' + name]) {
-      return this['_' + name];
+    const ivar = '_' + name;
+
+    if (this[ivar]) {
+      return this[ivar];
     }
 
-    this['_' + name] = await model.findFirst(this.db, {id: id || this[name + 'ID']});
+    this[ivar] = await model.findFirst(this.db, {id: id || this[ivar + 'RowID']});
 
-    return this['_' + name];
+    return this[ivar];
   }
 
   setOne(name, instance) {
+    const ivar = '_' + name;
+
     if (instance) {
-      this['_' + name] = instance;
-      this[name + 'ID'] = instance.rowID;
+      this[ivar] = instance;
+      this[ivar + 'RowID'] = instance.rowID;
     } else {
-      this['_' + name] = null;
-      this[name + 'ID'] = null;
+      this[ivar] = null;
+      this[ivar + 'RowID'] = null;
     }
   }
 }

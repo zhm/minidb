@@ -14,6 +14,26 @@ export default class User {
       { name: 'birthDate', column: 'birth_date', type: 'date' }
     ];
   }
+
+  get name() {
+    return this._name;
+  }
+
+  get email() {
+    return this._email;
+  }
+
+  get age() {
+    return this._age;
+  }
+
+  get height() {
+    return this._height;
+  }
+
+  get birthDate() {
+    return this._birthDate;
+  }
 }
 
 PersistentObject.register(User);

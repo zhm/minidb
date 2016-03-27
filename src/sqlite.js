@@ -106,7 +106,7 @@ export default class SQLite extends Database {
           self.lastID = null;
           self.changes = null;
 
-          if (this.verbose) {
+          if (self.verbose) {
             console.error('ERROR', err);
           }
 
