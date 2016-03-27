@@ -55,6 +55,10 @@ class Postgres extends _database2.default {
     })();
   }
 
+  get dialect() {
+    return 'postgresql';
+  }
+
   each(sql, params, callback) {
     var _this = this;
 
@@ -146,7 +150,14 @@ class Postgres extends _database2.default {
     // pgbouncer.
     for (const key of Object.keys(attributes)) {
       names.push((0, _pgFormat2.default)('%I', key));
-      placeholders.push((0, _pgFormat2.default)('%L', attributes[key]));
+
+      const value = attributes[key];
+
+      if (Array.isArray(value)) {
+        placeholders.push((0, _pgFormat2.default)('ARRAY[%L]', value));
+      } else {
+        placeholders.push((0, _pgFormat2.default)('%L', value));
+      }
     }
 
     return [names, placeholders, values];
@@ -157,7 +168,13 @@ class Postgres extends _database2.default {
     const values = [];
 
     for (const key of Object.keys(attributes)) {
-      sets.push((0, _pgFormat2.default)('%I = %L', key, attributes[key]));
+      const value = attributes[key];
+
+      if (Array.isArray(value)) {
+        sets.push((0, _pgFormat2.default)('%I = ARRAY[%L]', key, value));
+      } else {
+        sets.push((0, _pgFormat2.default)('%I = %L', key, value));
+      }
     }
 
     return [sets, values];
