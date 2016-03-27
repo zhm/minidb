@@ -23,6 +23,10 @@ export default class Postgres extends Database {
     return await connection(db);
   }
 
+  get dialect() {
+    return 'postgresql';
+  }
+
   async each(sql, params, callback) {
     const self = this;
 
@@ -106,7 +110,14 @@ export default class Postgres extends Database {
     // pgbouncer.
     for (const key of Object.keys(attributes)) {
       names.push(pgformat('%I', key));
-      placeholders.push(pgformat('%L', attributes[key]));
+
+      const value = attributes[key];
+
+      if (Array.isArray(value)) {
+        placeholders.push(pgformat('ARRAY[%L]', attributes[key]));
+      } else {
+        placeholders.push(pgformat('%L', attributes[key]));
+      }
     }
 
     return [names, placeholders, values];

@@ -3,6 +3,10 @@ import sqlite from 'sqlite3';
 import Database from './database';
 
 export default class SQLite extends Database {
+  get dialect() {
+    return 'sqlite';
+  }
+
   async open() {
     // https://phabricator.babeljs.io/T2765
     const {file, mode} = this.options;
