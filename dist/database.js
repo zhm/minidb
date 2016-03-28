@@ -135,7 +135,14 @@ class Database {
     for (const key of Object.keys(attributes)) {
       names.push(this.ident(key));
       placeholders.push('?');
-      values.push(attributes[key]);
+
+      const value = attributes[key];
+
+      if (Array.isArray(value)) {
+        values.push('\t' + value.join('\t') + '\t');
+      } else {
+        values.push(value);
+      }
     }
 
     return [names, placeholders, values];
@@ -147,7 +154,14 @@ class Database {
 
     for (const name of Object.keys(attributes)) {
       sets.push(this.ident(name) + ' = ?');
-      values.push(attributes[name]);
+
+      const value = attributes[name];
+
+      if (Array.isArray(value)) {
+        values.push('\t' + value.join('\t') + '\t');
+      } else {
+        values.push(value);
+      }
     }
 
     return [sets, values];
