@@ -18,6 +18,10 @@ var _pg = require('pg');
 
 var _pg2 = _interopRequireDefault(_pg);
 
+var _minipg = require('minipg');
+
+var _minipg2 = _interopRequireDefault(_minipg);
+
 var _pgFormat = require('pg-format');
 
 var _pgFormat2 = _interopRequireDefault(_pgFormat);
@@ -45,8 +49,18 @@ _pg2.default.types.setTypeParser(20, function (val) {
 });
 
 class Postgres extends _database2.default {
+  constructor(options) {
+    super(options);
+
+    this.client = options.client;
+  }
+
   ident(value) {
     return (0, _esc2.default)(value, '"');
+  }
+
+  static setNoticeProcessor(processor) {
+    _minipg2.default.Client.defaultNoticeProcessor = processor;
   }
 
   static connect(db) {
@@ -101,7 +115,13 @@ class Postgres extends _database2.default {
         });
       };
 
-      const client = yield Postgres.connect(_this.options.db);
+      let close = false;
+      let client = _this.client;
+
+      if (client == null) {
+        close = true;
+        client = yield Postgres.connect(_this.options.db);
+      }
 
       try {
         yield exec(client);
@@ -110,20 +130,83 @@ class Postgres extends _database2.default {
           console.error('ERROR', ex);
         }
 
-        yield client.done();
+        if (close) {
+          yield client.done();
+        }
 
         throw ex;
       }
 
-      yield client.done();
+      if (close) {
+        yield client.done();
+      }
+    })();
+  }
+
+  close() {
+    var _this2 = this;
+
+    return _asyncToGenerator(function* () {
+      if (_this2.client) {
+        yield _this2.client.done();
+
+        _this2.client = null;
+      }
     })();
   }
 
   execute(sql, params) {
-    var _this2 = this;
+    var _this3 = this;
 
     return _asyncToGenerator(function* () {
-      yield _this2.each(sql, [], null);
+      return yield _this3.each(sql, [], null);
+    })();
+  }
+
+  beginTransaction() {
+    if (this.client == null) {
+      throw new Error('client is null when beginning a transaction');
+    }
+
+    return this.execute('BEGIN TRANSACTION;');
+  }
+
+  commit() {
+    if (this.client == null) {
+      throw new Error('client is null when committing a transaction');
+    }
+
+    return this.execute('COMMIT TRANSACTION;');
+  }
+
+  rollback() {
+    if (this.client == null) {
+      throw new Error('client is null when rolling back a transaction');
+    }
+
+    return this.execute('ROLLBACK TRANSACTION;');
+  }
+
+  transaction(block) {
+    var _this4 = this;
+
+    return _asyncToGenerator(function* () {
+      // get a connection from the pool and make sure it gets used throughout the
+      // transaction block.
+      const client = yield Postgres.connect(_this4.options.db);
+
+      const db = new Postgres(Object.assign({}, _this4.options, { client: client }));
+
+      yield db.beginTransaction();
+
+      try {
+        yield block(db);
+        yield db.commit();
+        yield db.close();
+      } catch (ex) {
+        yield db.rollback();
+        throw ex;
+      }
     })();
   }
 
@@ -181,14 +264,14 @@ class Postgres extends _database2.default {
   }
 
   insert(table, attributes, options) {
-    var _this3 = this;
+    var _this5 = this;
 
     return _asyncToGenerator(function* () {
       if (options == null || options.pk == null) {
         throw new Error('pk is required');
       }
 
-      var _buildInsert = _this3.buildInsert(attributes);
+      var _buildInsert = _this5.buildInsert(attributes);
 
       var _buildInsert2 = _slicedToArray(_buildInsert, 3);
 
@@ -199,7 +282,7 @@ class Postgres extends _database2.default {
 
       const sql = (0, _util.format)('INSERT INTO %s (%s)\nVALUES (%s) RETURNING %s;', table, names.join(', '), placeholders.join(', '), options.pk);
 
-      const result = yield _this3.all(sql, values);
+      const result = yield _this5.all(sql, values);
 
       return +result[0].id;
     })();

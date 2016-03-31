@@ -51,15 +51,15 @@ class Database {
   }
 
   beginTransaction() {
-    return this.execute('BEGIN TRANSACTION');
+    return this.execute('BEGIN TRANSACTION;');
   }
 
   commit() {
-    return this.execute('COMMIT TRANSACTION');
+    return this.execute('COMMIT TRANSACTION;');
   }
 
   rollback() {
-    return this.execute('ROLLBACK TRANSACTION');
+    return this.execute('ROLLBACK TRANSACTION;');
   }
 
   transaction(block) {
@@ -69,8 +69,7 @@ class Database {
       yield _this.beginTransaction();
 
       try {
-        yield block();
-
+        yield block(_this);
         yield _this.commit();
       } catch (ex) {
         console.log('ERROR IN TRANSACTION', ex);
