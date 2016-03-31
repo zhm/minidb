@@ -32,23 +32,22 @@ export default class Database {
   }
 
   beginTransaction() {
-    return this.execute('BEGIN TRANSACTION');
+    return this.execute('BEGIN TRANSACTION;');
   }
 
   commit() {
-    return this.execute('COMMIT TRANSACTION');
+    return this.execute('COMMIT TRANSACTION;');
   }
 
   rollback() {
-    return this.execute('ROLLBACK TRANSACTION');
+    return this.execute('ROLLBACK TRANSACTION;');
   }
 
   async transaction(block) {
     await this.beginTransaction();
 
     try {
-      await block();
-
+      await block(this);
       await this.commit();
     } catch (ex) {
       console.log('ERROR IN TRANSACTION', ex);

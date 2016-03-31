@@ -1,6 +1,7 @@
 import Promise from 'bluebird';
 import connection from './postgres-connection';
 import pg from 'pg';
+import minipg from 'minipg';
 import pgformat from 'pg-format';
 import {format} from 'util';
 import esc from './esc';
@@ -15,8 +16,18 @@ pg.types.setTypeParser(20, function(val) {
 });
 
 export default class Postgres extends Database {
+  constructor(options) {
+    super(options);
+
+    this.client = options.client;
+  }
+
   ident(value) {
     return esc(value, '"');
+  }
+
+  static setNoticeProcessor(processor) {
+    minipg.Client.defaultNoticeProcessor = processor;
   }
 
   static async connect(db) {
@@ -66,7 +77,13 @@ export default class Postgres extends Database {
       });
     };
 
-    const client = await Postgres.connect(this.options.db);
+    let close = false;
+    let client = this.client;
+
+    if (client == null) {
+      close = true;
+      client = await Postgres.connect(this.options.db);
+    }
 
     try {
       await exec(client);
@@ -75,16 +92,71 @@ export default class Postgres extends Database {
         console.error('ERROR', ex);
       }
 
-      await client.done();
+      if (close) {
+        await client.done();
+      }
 
       throw ex;
     }
 
-    await client.done();
+    if (close) {
+      await client.done();
+    }
+  }
+
+  async close() {
+    if (this.client) {
+      await this.client.done();
+
+      this.client = null;
+    }
   }
 
   async execute(sql, params) {
-    await this.each(sql, [], null);
+    return await this.each(sql, [], null);
+  }
+
+  beginTransaction() {
+    if (this.client == null) {
+      throw new Error('client is null when beginning a transaction');
+    }
+
+    return this.execute('BEGIN TRANSACTION;');
+  }
+
+  commit() {
+    if (this.client == null) {
+      throw new Error('client is null when committing a transaction');
+    }
+
+    return this.execute('COMMIT TRANSACTION;');
+  }
+
+  rollback() {
+    if (this.client == null) {
+      throw new Error('client is null when rolling back a transaction');
+    }
+
+    return this.execute('ROLLBACK TRANSACTION;');
+  }
+
+  async transaction(block) {
+    // get a connection from the pool and make sure it gets used throughout the
+    // transaction block.
+    const client = await Postgres.connect(this.options.db);
+
+    const db = new Postgres(Object.assign({}, this.options, {client: client}));
+
+    await db.beginTransaction();
+
+    try {
+      await block(db);
+      await db.commit();
+      await db.close();
+    } catch (ex) {
+      await db.rollback();
+      throw ex;
+    }
   }
 
   buildWhere(where) {
