@@ -38,7 +38,7 @@ class SQLite extends _database2.default {
       const defaultMode = _sqlite2.default.OPEN_READWRITE | _sqlite2.default.OPEN_CREATE;
 
       const promise = new _bluebird2.default(function (resolve, reject) {
-        const db = new _sqlite2.default.Database(file, mode != null ? mode : defaultMode, err => {
+        const db = new _sqlite2.default.Database(file, mode != null ? mode : defaultMode, function (err) {
           if (err) {
             reject(err);
           } else {
@@ -70,7 +70,7 @@ class SQLite extends _database2.default {
       const self = _this2;
 
       const promise = new _bluebird2.default(function (resolve, reject) {
-        self.db.close(err => {
+        self.db.close(function (err) {
           if (err) {
             reject(err);
           } else {

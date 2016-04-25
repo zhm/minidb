@@ -80,7 +80,7 @@ class Postgres extends _database2.default {
       const self = _this;
 
       const exec = function exec(client) {
-        return new _bluebird2.default((resolve, reject) => {
+        return new _bluebird2.default(function (resolve, reject) {
           client.rawClient.query(sql).each(function (err, finished, columns, values, index) {
             if (err) {
               return reject(err);
