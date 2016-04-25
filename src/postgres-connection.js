@@ -70,6 +70,18 @@ async function connect(connection) {
   });
 }
 
+connect.shutdown = function() {
+  for (const connection of Object.keys(pools)) {
+    const pool = pools[connection];
+
+    if (pool) {
+      pool.drain(() => {
+        pool.destroyAllNow();
+      });
+    }
+  }
+};
+
 connect.idleTimeoutMillis = null;
 connect.reapIntervalMillis = null;
 

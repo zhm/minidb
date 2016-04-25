@@ -69,6 +69,10 @@ class Postgres extends _database2.default {
     })();
   }
 
+  static shutdown() {
+    _postgresConnection2.default.shutdown();
+  }
+
   get dialect() {
     return 'postgresql';
   }

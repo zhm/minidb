@@ -34,6 +34,10 @@ export default class Postgres extends Database {
     return await connection(db);
   }
 
+  static shutdown() {
+    connection.shutdown();
+  }
+
   get dialect() {
     return 'postgresql';
   }
