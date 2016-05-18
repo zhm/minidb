@@ -70,13 +70,13 @@ export default class PersistentObject extends Mixin {
   }
 
   static async count(ModelClass, db, attributes) {
-    const result = await db.findFirstByAttributes(ModelClass.tableName, ['COUNT(1) AS count'], attributes);
+    const result = await db.findFirstByAttributes(ModelClass.tableName, [ 'COUNT(1) AS count' ], attributes);
 
     return result.count;
   }
 
   static get modelMethods() {
-    return ['findFirst', 'findAll', 'findOrCreate', 'create', 'count'];
+    return [ 'findFirst', 'findAll', 'findOrCreate', 'create', 'count' ];
   }
 
   static get models() {
@@ -89,13 +89,13 @@ export default class PersistentObject extends Mixin {
     PersistentObject.includeInto(modelClass);
 
     const wrap = (method) => {
-      return function(...params) {
-        const args = [modelClass].concat(params);
+      return (...params) => {
+        const args = [ modelClass ].concat(params);
         return PersistentObject[method].apply(PersistentObject, args);
       };
     };
 
-    for (let method of PersistentObject.modelMethods) {
+    for (const method of PersistentObject.modelMethods) {
       modelClass[method] = wrap(method);
     }
   }
@@ -158,8 +158,8 @@ export default class PersistentObject extends Mixin {
     return this.rowID > 0;
   }
 
-  async save(options) {
-    options = options || {};
+  async save(opts) {
+    const options = opts || {};
 
     if (this.beforeSave) {
       await this.beforeSave(options);
@@ -188,9 +188,7 @@ export default class PersistentObject extends Mixin {
     return this;
   }
 
-  async delete(options) {
-    options = options || {};
-
+  async delete(opts) {
     if (this.isPersisted) {
       await this.db.delete(this.constructor.tableName, {id: this.rowID});
 

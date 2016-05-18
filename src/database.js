@@ -20,15 +20,19 @@ export default class Database {
   }
 
   async open() {
+    return null;
   }
 
   async close() {
+    return null;
   }
 
   async each(sql, params, callback) {
+    return null;
   }
 
   async execute(sql, params) {
+    return null;
   }
 
   beginTransaction() {
@@ -58,9 +62,8 @@ export default class Database {
 
   async all(sql, params) {
     const rows = [];
-    const self = this;
 
-    await self.each(sql, params, (columns, row, index) => {
+    await this.each(sql, params, (columns, row, index) => {
       if (row) {
         rows.push(row);
       }
@@ -92,7 +95,7 @@ export default class Database {
       }
     }
 
-    return [clause, values];
+    return [ clause, values ];
   }
 
   buildInsert(attributes) {
@@ -113,7 +116,7 @@ export default class Database {
       }
     }
 
-    return [names, placeholders, values];
+    return [ names, placeholders, values ];
   }
 
   buildUpdate(attributes) {
@@ -132,15 +135,15 @@ export default class Database {
       }
     }
 
-    return [sets, values];
+    return [ sets, values ];
   }
 
   findAllByAttributes(tableName, columns, where, orderBy, limit, offset) {
-    const selection = (columns == null ? ['*'] : columns);
+    const selection = (columns == null ? [ '*' ] : columns);
 
-    const [clause, values] = this.buildWhere(where);
+    const [ clause, values ] = this.buildWhere(where);
 
-    let parts = [];
+    const parts = [];
 
     if (clause.length > 0) {
       parts.push(format(' WHERE %s', clause.join(' AND ')));
@@ -173,6 +176,7 @@ export default class Database {
   }
 
   trace() {
+    return null;
   }
 
   profile(sql, time) {
@@ -180,7 +184,7 @@ export default class Database {
   }
 
   async insert(table, attributes, options) {
-    const [names, placeholders, values] = this.buildInsert(attributes);
+    const [ names, placeholders, values ] = this.buildInsert(attributes);
 
     const sql = format('INSERT INTO %s (%s)\nVALUES (%s);',
                        table,
@@ -195,7 +199,7 @@ export default class Database {
   async update(table, where, attributes, options) {
     const values = [];
 
-    const [sets, updateValues] = this.buildUpdate(attributes);
+    const [ sets, updateValues ] = this.buildUpdate(attributes);
 
     values.push.apply(values, updateValues);
 
@@ -205,7 +209,7 @@ export default class Database {
       }
     }
 
-    const [clause, whereValues] = this.buildWhere(where);
+    const [ clause, whereValues ] = this.buildWhere(where);
 
     values.push.apply(values, whereValues);
 
@@ -220,7 +224,7 @@ export default class Database {
   }
 
   async delete(table, where, options) {
-    const [clause, values] = this.buildWhere(where);
+    const [ clause, values ] = this.buildWhere(where);
 
     const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
 

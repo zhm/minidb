@@ -1,5 +1,4 @@
 import { createPool } from 'minipg';
-// import Promise from 'bluebird';
 
 const pools = {};
 
@@ -22,9 +21,10 @@ async function connect(connection) {
   }
 
   return new Promise((resolve, reject) => {
-    pool.acquire(function(err, client) {
+    pool.acquire((err, client) => {
       if (err) {
-        return reject(err);
+        reject(err);
+        return;
       }
 
       // return a little object with a query method and a done method
@@ -37,7 +37,7 @@ async function connect(connection) {
           return {
             async next() {
               return new Promise((res, rej) => {
-                cursor.next(function(err, finished, columns, values, index) {
+                cursor.next((err, finished, columns, values, index) => {
                   if (err) {
                     return rej(err);
                   }
@@ -65,12 +65,12 @@ async function connect(connection) {
         }
       };
 
-      return resolve(result);
+      resolve(result);
     });
   });
 }
 
-connect.shutdown = function() {
+connect.shutdown = () => {
   for (const connection of Object.keys(pools)) {
     const pool = pools[connection];
 

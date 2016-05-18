@@ -67,10 +67,8 @@ class SQLite extends _database2.default {
     var _this2 = this;
 
     return _asyncToGenerator(function* () {
-      const self = _this2;
-
       const promise = new _bluebird2.default(function (resolve, reject) {
-        self.db.close(function (err) {
+        _this2.db.close(function (err) {
           if (err) {
             reject(err);
           } else {
@@ -86,8 +84,6 @@ class SQLite extends _database2.default {
   }
 
   each(sql, params, callback) {
-    const self = this;
-
     return new _bluebird2.default((resolve, reject) => {
       let index = -1;
       let columns = null;
@@ -109,35 +105,37 @@ class SQLite extends _database2.default {
       const complete = err => {
         if (err) {
           return reject(err);
-        } else {
-          return resolve(null);
         }
+
+        return resolve(null);
       };
 
-      let args = [sql].concat(params).concat(cb, complete);
+      const args = [sql].concat(params).concat(cb, complete);
 
-      if (self.verbose) {
+      if (this.verbose) {
         console.log(sql, params);
       }
 
-      self.db.each.apply(self.db, args);
+      this.db.each.apply(this.db, args);
     });
   }
 
-  execute(sql, params) {
+  execute(sql, options) {
     var _this3 = this;
 
     return _asyncToGenerator(function* () {
-      params = params || [];
+      const params = options || [];
 
       return new _bluebird2.default(function (resolve, reject) {
         if (_this3.verbose) {
           console.log(sql, params);
         }
 
+        /* eslint-disable consistent-this */
         const self = _this3;
+        /* eslint-enable consistent-this */
 
-        _this3.db.run(sql, params, function (err) {
+        _this3.db.run(sql, params, function handler(err) {
           if (err) {
             self.lastID = null;
             self.changes = null;
@@ -147,12 +145,12 @@ class SQLite extends _database2.default {
             }
 
             return reject(err);
-          } else {
-            self.lastID = this.lastID;
-            self.changes = this.changes;
-
-            return resolve(null);
           }
+
+          self.lastID = this.lastID;
+          self.changes = this.changes;
+
+          return resolve(null);
         });
       });
     })();

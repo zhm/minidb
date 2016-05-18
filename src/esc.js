@@ -1,17 +1,17 @@
-export default function esc(identifier, quote) {
+export default function esc(identifier, quoteString) {
   if (identifier == null || identifier.length === 0) {
     return '';
   }
 
-  quote = quote || '"';
+  const quote = quoteString || '"';
 
   if (typeof identifier !== 'string') {
     return identifier;
   }
 
-  identifier = identifier.toString();
+  const ident = identifier.toString();
 
-  const escaped = identifier.replace(new RegExp(quote, 'g'), quote + quote);
+  const escaped = ident.replace(new RegExp(quote, 'g'), quote + quote);
 
   return quote + escaped + quote;
 }

@@ -39,10 +39,8 @@ export default class SQLite extends Database {
   }
 
   async close() {
-    const self = this;
-
     const promise = new Promise((resolve, reject) => {
-      self.db.close((err) => {
+      this.db.close((err) => {
         if (err) {
           reject(err);
         } else {
@@ -57,8 +55,6 @@ export default class SQLite extends Database {
   }
 
   each(sql, params, callback) {
-    const self = this;
-
     return new Promise((resolve, reject) => {
       let index = -1;
       let columns = null;
@@ -80,32 +76,34 @@ export default class SQLite extends Database {
       const complete = (err) => {
         if (err) {
           return reject(err);
-        } else {
-          return resolve(null);
         }
+
+        return resolve(null);
       };
 
-      let args = [sql].concat(params).concat(cb, complete);
+      const args = [ sql ].concat(params).concat(cb, complete);
 
-      if (self.verbose) {
+      if (this.verbose) {
         console.log(sql, params);
       }
 
-      self.db.each.apply(self.db, args);
+      this.db.each.apply(this.db, args);
     });
   }
 
-  async execute(sql, params) {
-    params = params || [];
+  async execute(sql, options) {
+    const params = options || [];
 
     return new Promise((resolve, reject) => {
       if (this.verbose) {
         console.log(sql, params);
       }
 
+      /* eslint-disable consistent-this */
       const self = this;
+      /* eslint-enable consistent-this */
 
-      this.db.run(sql, params, function(err) {
+      this.db.run(sql, params, function handler(err) {
         if (err) {
           self.lastID = null;
           self.changes = null;
@@ -115,12 +113,12 @@ export default class SQLite extends Database {
           }
 
           return reject(err);
-        } else {
-          self.lastID = this.lastID;
-          self.changes = this.changes;
-
-          return resolve(null);
         }
+
+        self.lastID = this.lastID;
+        self.changes = this.changes;
+
+        return resolve(null);
       });
     });
   }

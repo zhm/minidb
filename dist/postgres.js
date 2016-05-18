@@ -39,7 +39,7 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
 // number cannot fit in a JS Number, it can be casted to `text` in
 // the query and parsed manually. Without this, dead simple COUNT(*)
 // queries are returned as text and it makes doing simple things hard.
-_pg2.default.types.setTypeParser(20, function (val) {
+_pg2.default.types.setTypeParser(20, val => {
   return val == null ? null : parseInt(val, 10);
 });
 
@@ -76,8 +76,6 @@ class Postgres extends _database2.default {
     var _this = this;
 
     return _asyncToGenerator(function* () {
-      const self = _this;
-
       const exec = function exec(client) {
         return new Promise(function (resolve, reject) {
           client.rawClient.query(sql).each(function (err, finished, columns, values, index) {
@@ -94,8 +92,6 @@ class Postgres extends _database2.default {
             let parsedValues = null;
 
             if (values) {
-              ++index;
-
               parsedValues = {};
 
               for (let i = 0; i < columns.length; ++i) {
@@ -125,7 +121,7 @@ class Postgres extends _database2.default {
       try {
         yield exec(client);
       } catch (ex) {
-        if (self.verbose) {
+        if (_this.verbose) {
           console.error('ERROR', ex);
         }
 

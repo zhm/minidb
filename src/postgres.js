@@ -11,7 +11,7 @@ import Database from './database';
 // number cannot fit in a JS Number, it can be casted to `text` in
 // the query and parsed manually. Without this, dead simple COUNT(*)
 // queries are returned as text and it makes doing simple things hard.
-pg.types.setTypeParser(20, function(val) {
+pg.types.setTypeParser(20, (val) => {
   return val == null ? null : parseInt(val, 10);
 });
 
@@ -43,11 +43,9 @@ export default class Postgres extends Database {
   }
 
   async each(sql, params, callback) {
-    const self = this;
-
-    const exec = function(client) {
+    const exec = (client) => {
       return new Promise((resolve, reject) => {
-        client.rawClient.query(sql).each(function(err, finished, columns, values, index) {
+        client.rawClient.query(sql).each((err, finished, columns, values, index) => {
           if (err) {
             return reject(err);
           } else if (finished) {
@@ -61,8 +59,6 @@ export default class Postgres extends Database {
           let parsedValues = null;
 
           if (values) {
-            ++index;
-
             parsedValues = {};
 
             for (let i = 0; i < columns.length; ++i) {
@@ -92,7 +88,7 @@ export default class Postgres extends Database {
     try {
       await exec(client);
     } catch (ex) {
-      if (self.verbose) {
+      if (this.verbose) {
         console.error('ERROR', ex);
       }
 
@@ -172,7 +168,7 @@ export default class Postgres extends Database {
       }
     }
 
-    return [clause, []];
+    return [ clause, [] ];
   }
 
   buildInsert(attributes) {
@@ -196,7 +192,7 @@ export default class Postgres extends Database {
       }
     }
 
-    return [names, placeholders, values];
+    return [ names, placeholders, values ];
   }
 
   buildUpdate(attributes) {
@@ -213,7 +209,7 @@ export default class Postgres extends Database {
       }
     }
 
-    return [sets, values];
+    return [ sets, values ];
   }
 
   async insert(table, attributes, options) {
@@ -221,7 +217,7 @@ export default class Postgres extends Database {
       throw new Error('pk is required');
     }
 
-    const [names, placeholders, values] = this.buildInsert(attributes);
+    const [ names, placeholders, values ] = this.buildInsert(attributes);
 
     const sql = format('INSERT INTO %s (%s)\nVALUES (%s) RETURNING %s;',
                        table,

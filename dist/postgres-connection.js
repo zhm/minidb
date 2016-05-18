@@ -28,7 +28,8 @@ let connect = (() => {
     return new Promise(function (resolve, reject) {
       pool.acquire(function (err, client) {
         if (err) {
-          return reject(err);
+          reject(err);
+          return;
         }
 
         // return a little object with a query method and a done method
@@ -75,7 +76,7 @@ let connect = (() => {
           }
         };
 
-        return resolve(result);
+        resolve(result);
       });
     });
   });
@@ -89,11 +90,9 @@ var _minipg = require('minipg');
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
 
-// import Promise from 'bluebird';
-
 const pools = {};
 
-connect.shutdown = function () {
+connect.shutdown = () => {
   for (const connection of Object.keys(pools)) {
     const pool = pools[connection];
 

@@ -35,19 +35,27 @@ class Database {
   }
 
   open() {
-    return _asyncToGenerator(function* () {})();
+    return _asyncToGenerator(function* () {
+      return null;
+    })();
   }
 
   close() {
-    return _asyncToGenerator(function* () {})();
+    return _asyncToGenerator(function* () {
+      return null;
+    })();
   }
 
   each(sql, params, callback) {
-    return _asyncToGenerator(function* () {})();
+    return _asyncToGenerator(function* () {
+      return null;
+    })();
   }
 
   execute(sql, params) {
-    return _asyncToGenerator(function* () {})();
+    return _asyncToGenerator(function* () {
+      return null;
+    })();
   }
 
   beginTransaction() {
@@ -84,9 +92,8 @@ class Database {
 
     return _asyncToGenerator(function* () {
       const rows = [];
-      const self = _this2;
 
-      yield self.each(sql, params, function (columns, row, index) {
+      yield _this2.each(sql, params, function (columns, row, index) {
         if (row) {
           rows.push(row);
         }
@@ -177,7 +184,7 @@ class Database {
     const values = _buildWhere2[1];
 
 
-    let parts = [];
+    const parts = [];
 
     if (clause.length > 0) {
       parts.push((0, _util.format)(' WHERE %s', clause.join(' AND ')));
@@ -210,7 +217,9 @@ class Database {
     })();
   }
 
-  trace() {}
+  trace() {
+    return null;
+  }
 
   profile(sql, time) {
     console.log('PROFILE', '(' + time + 'ms)', sql);

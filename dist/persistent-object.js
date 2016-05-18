@@ -120,7 +120,7 @@ class PersistentObject extends _mixmatch2.default {
       };
     };
 
-    for (let method of PersistentObject.modelMethods) {
+    for (const method of PersistentObject.modelMethods) {
       modelClass[method] = wrap(method);
     }
   }
@@ -183,11 +183,11 @@ class PersistentObject extends _mixmatch2.default {
     return this.rowID > 0;
   }
 
-  save(options) {
+  save(opts) {
     var _this = this;
 
     return _asyncToGenerator(function* () {
-      options = options || {};
+      const options = opts || {};
 
       if (_this.beforeSave) {
         yield _this.beforeSave(options);
@@ -217,12 +217,10 @@ class PersistentObject extends _mixmatch2.default {
     })();
   }
 
-  delete(options) {
+  delete(opts) {
     var _this2 = this;
 
     return _asyncToGenerator(function* () {
-      options = options || {};
-
       if (_this2.isPersisted) {
         yield _this2.db.delete(_this2.constructor.tableName, { id: _this2.rowID });
 
