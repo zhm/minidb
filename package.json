@@ -1,6 +1,6 @@
 {
   "name": "minidb",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Mini ORM",
   "main": "dist/index.js",
   "repository": {
@@ -18,7 +18,7 @@
   "license": "BSD",
   "dependencies": {
     "bluebird": "^3.4.0",
-    "minipg": "0.0.11",
+    "minipg": "0.0.12",
     "mixmatch": "0.0.2",
     "pg": "^4.5.5",
     "pg-format": "^1.0.2"

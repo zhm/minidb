@@ -1,9 +1,9 @@
-import Promise from 'bluebird';
+// import Promise from 'bluebird';
 import connection from './postgres-connection';
 import pg from 'pg';
-import minipg from 'minipg';
+import { Client } from 'minipg';
 import pgformat from 'pg-format';
-import {format} from 'util';
+import { format } from 'util';
 import esc from './esc';
 import Database from './database';
 
@@ -27,7 +27,7 @@ export default class Postgres extends Database {
   }
 
   static setNoticeProcessor(processor) {
-    minipg.Client.defaultNoticeProcessor = processor;
+    Client.defaultNoticeProcessor = processor;
   }
 
   static async connect(db) {

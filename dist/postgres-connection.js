@@ -22,10 +22,10 @@ let connect = (() => {
         reapIntervalMillis: connect.reapIntervalMillis
       };
 
-      pool = pools[connection] = _minipg2.default.createPool(params);
+      pool = pools[connection] = (0, _minipg.createPool)(params);
     }
 
-    return new _bluebird2.default(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
       pool.acquire(function (err, client) {
         if (err) {
           return reject(err);
@@ -41,7 +41,7 @@ let connect = (() => {
             return {
               next: function next() {
                 return _asyncToGenerator(function* () {
-                  return new _bluebird2.default(function (res, rej) {
+                  return new Promise(function (res, rej) {
                     cursor.next(function (err, finished, columns, values, index) {
                       if (err) {
                         return rej(err);
@@ -57,7 +57,7 @@ let connect = (() => {
 
                 return _asyncToGenerator(function* () {
                   // exhaust the cursor to completion
-                  while (!cursor.finished()) {
+                  while (!cursor.finished) {
                     try {
                       yield _this.next();
                     } catch (ex) {
@@ -87,15 +87,9 @@ let connect = (() => {
 
 var _minipg = require('minipg');
 
-var _minipg2 = _interopRequireDefault(_minipg);
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
 
-var _bluebird = require('bluebird');
-
-var _bluebird2 = _interopRequireDefault(_bluebird);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new _bluebird2.default(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return _bluebird2.default.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+// import Promise from 'bluebird';
 
 const pools = {};
 

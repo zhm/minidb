@@ -1,5 +1,5 @@
-import pg from 'minipg';
-import Promise from 'bluebird';
+import { createPool } from 'minipg';
+// import Promise from 'bluebird';
 
 const pools = {};
 
@@ -18,7 +18,7 @@ async function connect(connection) {
       reapIntervalMillis: connect.reapIntervalMillis
     };
 
-    pool = pools[connection] = pg.createPool(params);
+    pool = pools[connection] = createPool(params);
   }
 
   return new Promise((resolve, reject) => {
@@ -49,7 +49,7 @@ async function connect(connection) {
 
             async close() {
               // exhaust the cursor to completion
-              while (!cursor.finished()) {
+              while (!cursor.finished) {
                 try {
                   await this.next();
                 } catch (ex) {
