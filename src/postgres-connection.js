@@ -6,15 +6,15 @@ const pools = {};
 // This is used when we need to execute multiple successive queries and make sure
 // they're executed on the *same* connection and not separate connections
 // from the connection pool.
-async function connect(connection) {
+async function postgresConnection(connection) {
   let pool = pools[connection];
 
   if (pool == null) {
     const params = {
       db: connection,
       max: 25,
-      idleTimeoutMillis: connect.idleTimeoutMillis,
-      reapIntervalMillis: connect.reapIntervalMillis
+      idleTimeoutMillis: postgresConnection.idleTimeoutMillis,
+      reapIntervalMillis: postgresConnection.reapIntervalMillis
     };
 
     pool = pools[connection] = createPool(params);
@@ -70,7 +70,7 @@ async function connect(connection) {
   });
 }
 
-connect.shutdown = () => {
+postgresConnection.shutdown = () => {
   for (const connection of Object.keys(pools)) {
     const pool = pools[connection];
 
@@ -82,7 +82,7 @@ connect.shutdown = () => {
   }
 };
 
-connect.idleTimeoutMillis = null;
-connect.reapIntervalMillis = null;
+postgresConnection.idleTimeoutMillis = null;
+postgresConnection.reapIntervalMillis = null;
 
-export default connect;
+export default postgresConnection;

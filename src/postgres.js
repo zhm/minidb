@@ -1,5 +1,4 @@
-// import Promise from 'bluebird';
-import connection from './postgres-connection';
+import postgresConnection from './postgres-connection';
 import pg from 'pg';
 import { Client } from 'minipg';
 import pgformat from 'pg-format';
@@ -31,11 +30,11 @@ export default class Postgres extends Database {
   }
 
   static async connect(db) {
-    return await connection(db);
+    return await postgresConnection(db);
   }
 
   static shutdown() {
-    connection.shutdown();
+    postgresConnection.shutdown();
   }
 
   get dialect() {
