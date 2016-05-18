@@ -17,6 +17,12 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
 const models = [];
 
 class PersistentObject extends _mixmatch2.default {
+  constructor(db, attributes) {
+    super();
+
+    this.initializePersistentObject(db, attributes);
+  }
+
   get db() {
     return this._db;
   }
