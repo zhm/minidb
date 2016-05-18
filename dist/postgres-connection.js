@@ -10,7 +10,7 @@ Object.defineProperty(exports, "__esModule", {
 // they're executed on the *same* connection and not separate connections
 // from the connection pool.
 
-let connect = (() => {
+let postgresConnection = (() => {
   var ref = _asyncToGenerator(function* (connection) {
     let pool = pools[connection];
 
@@ -18,8 +18,8 @@ let connect = (() => {
       const params = {
         db: connection,
         max: 25,
-        idleTimeoutMillis: connect.idleTimeoutMillis,
-        reapIntervalMillis: connect.reapIntervalMillis
+        idleTimeoutMillis: postgresConnection.idleTimeoutMillis,
+        reapIntervalMillis: postgresConnection.reapIntervalMillis
       };
 
       pool = pools[connection] = (0, _minipg.createPool)(params);
@@ -81,7 +81,7 @@ let connect = (() => {
     });
   });
 
-  return function connect(_x) {
+  return function postgresConnection(_x) {
     return ref.apply(this, arguments);
   };
 })();
@@ -92,7 +92,7 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
 
 const pools = {};
 
-connect.shutdown = () => {
+postgresConnection.shutdown = () => {
   for (const connection of Object.keys(pools)) {
     const pool = pools[connection];
 
@@ -104,8 +104,8 @@ connect.shutdown = () => {
   }
 };
 
-connect.idleTimeoutMillis = null;
-connect.reapIntervalMillis = null;
+postgresConnection.idleTimeoutMillis = null;
+postgresConnection.reapIntervalMillis = null;
 
-exports.default = connect;
+exports.default = postgresConnection;
 //# sourceMappingURL=postgres-connection.js.map
