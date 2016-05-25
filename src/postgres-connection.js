@@ -34,10 +34,14 @@ async function postgresConnection(connection) {
         query() {
           const cursor = client.query.apply(client, arguments);
 
-          return {
+          const obj = {
+            isFinished: false,
+
             async next() {
               return new Promise((res, rej) => {
                 cursor.next((err, finished, columns, values, index) => {
+                  obj.isFinished = finished;
+
                   if (err) {
                     return rej(err);
                   }
@@ -58,6 +62,8 @@ async function postgresConnection(connection) {
               }
             }
           };
+
+          return obj;
         },
 
         async done() {

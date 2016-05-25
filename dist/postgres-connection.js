@@ -39,11 +39,15 @@ let postgresConnection = (() => {
           query: function query() {
             const cursor = client.query.apply(client, arguments);
 
-            return {
+            const obj = {
+              isFinished: false,
+
               next: function next() {
                 return _asyncToGenerator(function* () {
                   return new Promise(function (res, rej) {
                     cursor.next(function (err, finished, columns, values, index) {
+                      obj.isFinished = finished;
+
                       if (err) {
                         return rej(err);
                       }
@@ -68,6 +72,8 @@ let postgresConnection = (() => {
                 })();
               }
             };
+
+            return obj;
           },
           done: function done() {
             return _asyncToGenerator(function* () {
