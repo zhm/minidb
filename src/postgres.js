@@ -1,4 +1,4 @@
-import postgresConnection from './postgres-connection';
+import PostgresConnection from './postgres-connection';
 import pg from 'pg';
 import { Client } from 'minipg';
 import pgformat from 'pg-format';
@@ -30,11 +30,11 @@ export default class Postgres extends Database {
   }
 
   static async connect(db) {
-    return await postgresConnection(db);
+    return await PostgresConnection.connect(db);
   }
 
   static shutdown() {
-    postgresConnection.shutdown();
+    PostgresConnection.shutdown();
   }
 
   get dialect() {
@@ -42,42 +42,9 @@ export default class Postgres extends Database {
   }
 
   async each(sql, params, callback) {
-    const exec = (client) => {
-      return new Promise((resolve, reject) => {
-        client.rawClient.query(sql).each((err, finished, columns, values, index) => {
-          if (err) {
-            return reject(err);
-          } else if (finished) {
-            return resolve(null);
-          }
-
-          if (!callback) {
-            return null;
-          }
-
-          let parsedValues = null;
-
-          if (values) {
-            parsedValues = {};
-
-            for (let i = 0; i < columns.length; ++i) {
-              let value = values[i];
-
-              if (value != null) {
-                value = pg.types.getTypeParser(columns[i].type)(value);
-              }
-
-              parsedValues[columns[i].name] = value;
-            }
-          }
-
-          return callback(columns, parsedValues, index);
-        });
-      });
-    };
-
     let close = false;
     let client = this.client;
+    let cursor = null;
 
     if (client == null) {
       close = true;
@@ -85,34 +52,54 @@ export default class Postgres extends Database {
     }
 
     try {
-      await exec(client);
+      cursor = client.query(sql);
+
+      while (cursor.hasRows) {
+        const result = await cursor.next();
+
+        if (result && callback) {
+          /* eslint-disable callback-return */
+          callback(result.columns, result.values, result.index);
+          /* eslint-enable callback-return */
+        }
+      }
     } catch (ex) {
       if (this.verbose) {
         console.error('ERROR', ex);
       }
 
-      if (close) {
-        await client.done();
+      throw ex;
+    } finally {
+      if (cursor) {
+        await cursor.close();
       }
 
-      throw ex;
-    }
-
-    if (close) {
-      await client.done();
+      if (close) {
+        await client.close();
+      }
     }
   }
 
   async close() {
     if (this.client) {
-      await this.client.done();
+      await this.client.close();
 
       this.client = null;
     }
   }
 
   async execute(sql, params) {
-    return await this.each(sql, [], null);
+    await this.each(sql, [], null);
+  }
+
+  async query(sql, params) {
+    let client = this.client;
+
+    if (client == null) {
+      client = await Postgres.connect(this.options.db);
+    }
+
+    return client.query(sql, params);
   }
 
   beginTransaction() {
@@ -151,11 +138,38 @@ export default class Postgres extends Database {
     try {
       await block(db);
       await db.commit();
-      await db.close();
     } catch (ex) {
       await db.rollback();
       throw ex;
+    } finally {
+      await db.close();
     }
+  }
+
+  static transaction(options, block) {
+    return new Postgres(options).transaction(block);
+  }
+
+  static async using(options, block) {
+    const connection = await Postgres.connect(options.db);
+
+    const db = new Postgres(Object.assign({}, options, {client: connection}));
+
+    try {
+      await block(db);
+    } finally {
+      await connection.close();
+    }
+  }
+
+  arrayFormatString(array) {
+    if (Number.isInteger(array[0])) {
+      return 'ARRAY[%L]::bigint[]';
+    } else if (typeof array[0] === 'number') {
+      return 'ARRAY[%L]::double precision[]';
+    }
+
+    return 'ARRAY[%L]';
   }
 
   buildWhere(where) {
@@ -163,14 +177,18 @@ export default class Postgres extends Database {
 
     if (where) {
       for (const key of Object.keys(where)) {
-        clause.push(pgformat('%I = %L', key, where[key]));
+        if (Array.isArray(where[key])) {
+          clause.push(pgformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, where[key]));
+        } else {
+          clause.push(pgformat('%I = %L', key, where[key]));
+        }
       }
     }
 
     return [ clause, [] ];
   }
 
-  buildInsert(attributes) {
+  buildInsert(attributes, includeNames = true) {
     const names = [];
     const values = [];
     const placeholders = [];
@@ -180,12 +198,16 @@ export default class Postgres extends Database {
     // and impose requirements on the connection that are incompatible with
     // pgbouncer.
     for (const key of Object.keys(attributes)) {
-      names.push(pgformat('%I', key));
+      if (includeNames) {
+        names.push(pgformat('%I', key));
+      }
 
       const value = attributes[key];
 
       if (Array.isArray(value)) {
         placeholders.push(pgformat('ARRAY[%L]', value));
+      } else if (value && value.raw) {
+        placeholders.push(pgformat('%s', value.raw));
       } else {
         placeholders.push(pgformat('%L', value));
       }
@@ -203,6 +225,8 @@ export default class Postgres extends Database {
 
       if (Array.isArray(value)) {
         sets.push(pgformat('%I = ARRAY[%L]', key, value));
+      } else if (value && value.raw) {
+        sets.push(pgformat('%I = %s', value.raw));
       } else {
         sets.push(pgformat('%I = %L', key, value));
       }
@@ -211,20 +235,51 @@ export default class Postgres extends Database {
     return [ sets, values ];
   }
 
-  async insert(table, attributes, options) {
+  insertStatement(table, attributes, options) {
     if (options == null || options.pk == null) {
       throw new Error('pk is required');
     }
 
     const [ names, placeholders, values ] = this.buildInsert(attributes);
 
-    const sql = format('INSERT INTO %s (%s)\nVALUES (%s) RETURNING %s;',
+    const returning = options && options.returnPrimaryKey === false ? '' : ' RETURNING ' + options.pk;
+
+    const sql = format('INSERT INTO %s (%s)\nVALUES (%s)%s;',
                        table,
                        names.join(', '),
                        placeholders.join(', '),
-                       options.pk);
+                       returning);
 
-    const result = await this.all(sql, values);
+    return {sql, values};
+  }
+
+  insertStatements(table, arrayOfAttributes, options) {
+    const arrayOfValues = [];
+
+    let names = null;
+
+    for (const attributes of arrayOfAttributes) {
+      const insert = this.buildInsert(attributes, names == null);
+
+      if (names == null) {
+        names = insert[0];
+      }
+
+      arrayOfValues.push('(' + insert[1].join(', ') + ')');
+    }
+
+    const sql = format('INSERT INTO %s (%s)\nVALUES %s;',
+                       table,
+                       names.join(', '),
+                       arrayOfValues.join(',\n'));
+
+    return {sql, values: {}};
+  }
+
+  async insert(table, attributes, options) {
+    const statement = this.insertStatement(table, attributes, options);
+
+    const result = await this.all(statement.sql, statement.values);
 
     return +result[0].id;
   }

@@ -1,94 +1,70 @@
 import { createPool } from 'minipg';
+import PostgresCursor from './postgres-cursor';
 
-const pools = {};
+const POOLS = {};
 
 // Wrap a single connection w/ a query method in an async function.
 // This is used when we need to execute multiple successive queries and make sure
 // they're executed on the *same* connection and not separate connections
 // from the connection pool.
-async function postgresConnection(connection) {
-  let pool = pools[connection];
-
-  if (pool == null) {
-    const params = {
-      db: connection,
-      max: 25,
-      idleTimeoutMillis: postgresConnection.idleTimeoutMillis,
-      reapIntervalMillis: postgresConnection.reapIntervalMillis
-    };
-
-    pool = pools[connection] = createPool(params);
+export default class PostgresConnection {
+  constructor(pool, rawClient) {
+    this.pool = pool;
+    this.rawClient = rawClient;
   }
 
-  return new Promise((resolve, reject) => {
-    pool.acquire((err, client) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+  static pool(connectionString) {
+    let pool = POOLS[connectionString];
 
-      // return a little object with a query method and a done method
-      const result = {
-        rawClient: client,
-
-        query() {
-          const cursor = client.query.apply(client, arguments);
-
-          const obj = {
-            isFinished: false,
-
-            async next() {
-              return new Promise((res, rej) => {
-                cursor.next((err, finished, columns, values, index) => {
-                  obj.isFinished = finished;
-
-                  if (err) {
-                    return rej(err);
-                  }
-
-                  return res({columns: columns, values: values});
-                });
-              });
-            },
-
-            async close() {
-              // exhaust the cursor to completion
-              while (!cursor.finished) {
-                try {
-                  await this.next();
-                } catch (ex) {
-                  console.warn('exception while closing cursor', ex);
-                }
-              }
-            }
-          };
-
-          return obj;
-        },
-
-        async done() {
-          pool.release(client);
-        }
+    if (pool == null) {
+      const params = {
+        db: connectionString,
+        max: 25,
+        idleTimeoutMillis: PostgresConnection.idleTimeoutMillis,
+        reapIntervalMillis: PostgresConnection.reapIntervalMillis
       };
 
-      resolve(result);
-    });
-  });
-}
+      pool = POOLS[connectionString] = createPool(params);
+    }
 
-postgresConnection.shutdown = () => {
-  for (const connection of Object.keys(pools)) {
-    const pool = pools[connection];
+    return pool;
+  }
 
-    if (pool) {
-      pool.drain(() => {
-        pool.destroyAllNow();
+  query(...args) {
+    return new PostgresCursor(this, this.rawClient.query(...args));
+  }
+
+  close() {
+    this.pool.release(this.rawClient);
+    this.rawClient = null;
+  }
+
+  static async connect(connectionString) {
+    return new Promise((resolve, reject) => {
+      const pool = PostgresConnection.pool(connectionString);
+
+      pool.acquire((err, client) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(new PostgresConnection(pool, client));
       });
+    });
+  }
+
+  static shutdown() {
+    for (const connection of Object.keys(POOLS)) {
+      const pool = POOLS[connection];
+
+      if (pool) {
+        pool.drain(() => {
+          pool.destroyAllNow();
+        });
+      }
     }
   }
-};
+}
 
-postgresConnection.idleTimeoutMillis = null;
-postgresConnection.reapIntervalMillis = null;
-
-export default postgresConnection;
+PostgresConnection.idleTimeoutMillis = null;
+PostgresConnection.reapIntervalMillis = null;

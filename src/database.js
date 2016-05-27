@@ -183,7 +183,7 @@ export default class Database {
     console.log('PROFILE', '(' + time + 'ms)', sql);
   }
 
-  async insert(table, attributes, options) {
+  insertStatement(table, attributes) {
     const [ names, placeholders, values ] = this.buildInsert(attributes);
 
     const sql = format('INSERT INTO %s (%s)\nVALUES (%s);',
@@ -191,12 +191,10 @@ export default class Database {
                        names.join(', '),
                        placeholders.join(', '));
 
-    await this.execute(sql, values);
-
-    return this.lastID;
+    return {sql, values};
   }
 
-  async update(table, where, attributes, options) {
+  updateStatement(table, where, attributes, options) {
     const values = [];
 
     const [ sets, updateValues ] = this.buildUpdate(attributes);
@@ -215,23 +213,43 @@ export default class Database {
 
     const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
 
-    const sql = format('UPDATE %s SET %s%s',
+    const sql = format('UPDATE %s SET %s%s;',
                        table, sets.join(', '), whereClause);
 
-    await this.execute(sql, values);
+    return {sql, values};
+  }
+
+  deleteStatement(table, where) {
+    const [ clause, values ] = this.buildWhere(where);
+
+    const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
+
+    const sql = format('DELETE FROM %s%s;',
+                       table, whereClause);
+
+    return {sql, values};
+  }
+
+  async insert(table, attributes, options) {
+    const statement = this.insertStatement(table, attributes);
+
+    await this.execute(statement.sql, statement.values);
+
+    return this.lastID;
+  }
+
+  async update(table, where, attributes, options) {
+    const statement = this.updateStatement(table, where, attributes, options);
+
+    await this.execute(statement.sql, statement.values);
 
     return null;
   }
 
   async delete(table, where, options) {
-    const [ clause, values ] = this.buildWhere(where);
+    const statement = this.deleteStatement(table, where);
 
-    const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
-
-    const sql = format('DELETE FROM %s%s',
-                       table, whereClause);
-
-    await this.execute(sql, values);
+    await this.execute(statement.sql, statement.values);
 
     return null;
   }
