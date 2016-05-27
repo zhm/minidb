@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.SQLite = exports.postgresConnection = exports.Postgres = exports.PersistentObject = undefined;
+exports.SQLite = exports.PostgresConnection = exports.Postgres = exports.PersistentObject = undefined;
 
 var _persistentObject = require('./persistent-object');
 
@@ -25,6 +25,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 exports.PersistentObject = _persistentObject2.default;
 exports.Postgres = _postgres2.default;
-exports.postgresConnection = _postgresConnection2.default;
+exports.PostgresConnection = _postgresConnection2.default;
 exports.SQLite = _sqlite2.default;
 //# sourceMappingURL=index.js.map

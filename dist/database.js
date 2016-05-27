@@ -225,22 +225,80 @@ class Database {
     console.log('PROFILE', '(' + time + 'ms)', sql);
   }
 
+  insertStatement(table, attributes) {
+    var _buildInsert = this.buildInsert(attributes);
+
+    var _buildInsert2 = _slicedToArray(_buildInsert, 3);
+
+    const names = _buildInsert2[0];
+    const placeholders = _buildInsert2[1];
+    const values = _buildInsert2[2];
+
+
+    const sql = (0, _util.format)('INSERT INTO %s (%s)\nVALUES (%s);', table, names.join(', '), placeholders.join(', '));
+
+    return { sql: sql, values: values };
+  }
+
+  updateStatement(table, where, attributes, options) {
+    const values = [];
+
+    var _buildUpdate = this.buildUpdate(attributes);
+
+    var _buildUpdate2 = _slicedToArray(_buildUpdate, 2);
+
+    const sets = _buildUpdate2[0];
+    const updateValues = _buildUpdate2[1];
+
+
+    values.push.apply(values, updateValues);
+
+    if (options && options.raw) {
+      for (const name of Object.keys(options.raw)) {
+        sets.push((0, _util.format)('%s = %s', name, options.raw[name]));
+      }
+    }
+
+    var _buildWhere3 = this.buildWhere(where);
+
+    var _buildWhere4 = _slicedToArray(_buildWhere3, 2);
+
+    const clause = _buildWhere4[0];
+    const whereValues = _buildWhere4[1];
+
+
+    values.push.apply(values, whereValues);
+
+    const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
+
+    const sql = (0, _util.format)('UPDATE %s SET %s%s;', table, sets.join(', '), whereClause);
+
+    return { sql: sql, values: values };
+  }
+
+  deleteStatement(table, where) {
+    var _buildWhere5 = this.buildWhere(where);
+
+    var _buildWhere6 = _slicedToArray(_buildWhere5, 2);
+
+    const clause = _buildWhere6[0];
+    const values = _buildWhere6[1];
+
+
+    const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
+
+    const sql = (0, _util.format)('DELETE FROM %s%s;', table, whereClause);
+
+    return { sql: sql, values: values };
+  }
+
   insert(table, attributes, options) {
     var _this5 = this;
 
     return _asyncToGenerator(function* () {
-      var _buildInsert = _this5.buildInsert(attributes);
+      const statement = _this5.insertStatement(table, attributes);
 
-      var _buildInsert2 = _slicedToArray(_buildInsert, 3);
-
-      const names = _buildInsert2[0];
-      const placeholders = _buildInsert2[1];
-      const values = _buildInsert2[2];
-
-
-      const sql = (0, _util.format)('INSERT INTO %s (%s)\nVALUES (%s);', table, names.join(', '), placeholders.join(', '));
-
-      yield _this5.execute(sql, values);
+      yield _this5.execute(statement.sql, statement.values);
 
       return _this5.lastID;
     })();
@@ -250,39 +308,9 @@ class Database {
     var _this6 = this;
 
     return _asyncToGenerator(function* () {
-      const values = [];
+      const statement = _this6.updateStatement(table, where, attributes, options);
 
-      var _buildUpdate = _this6.buildUpdate(attributes);
-
-      var _buildUpdate2 = _slicedToArray(_buildUpdate, 2);
-
-      const sets = _buildUpdate2[0];
-      const updateValues = _buildUpdate2[1];
-
-
-      values.push.apply(values, updateValues);
-
-      if (options && options.raw) {
-        for (const name of Object.keys(options.raw)) {
-          sets.push((0, _util.format)('%s = %s', name, options.raw[name]));
-        }
-      }
-
-      var _buildWhere3 = _this6.buildWhere(where);
-
-      var _buildWhere4 = _slicedToArray(_buildWhere3, 2);
-
-      const clause = _buildWhere4[0];
-      const whereValues = _buildWhere4[1];
-
-
-      values.push.apply(values, whereValues);
-
-      const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
-
-      const sql = (0, _util.format)('UPDATE %s SET %s%s', table, sets.join(', '), whereClause);
-
-      yield _this6.execute(sql, values);
+      yield _this6.execute(statement.sql, statement.values);
 
       return null;
     })();
@@ -292,19 +320,9 @@ class Database {
     var _this7 = this;
 
     return _asyncToGenerator(function* () {
-      var _buildWhere5 = _this7.buildWhere(where);
+      const statement = _this7.deleteStatement(table, where);
 
-      var _buildWhere6 = _slicedToArray(_buildWhere5, 2);
-
-      const clause = _buildWhere6[0];
-      const values = _buildWhere6[1];
-
-
-      const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
-
-      const sql = (0, _util.format)('DELETE FROM %s%s', table, whereClause);
-
-      yield _this7.execute(sql, values);
+      yield _this7.execute(statement.sql, statement.values);
 
       return null;
     })();

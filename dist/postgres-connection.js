@@ -4,114 +4,84 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _minipg = require('minipg');
+
+var _postgresCursor = require('./postgres-cursor');
+
+var _postgresCursor2 = _interopRequireDefault(_postgresCursor);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+
+const POOLS = {};
 
 // Wrap a single connection w/ a query method in an async function.
 // This is used when we need to execute multiple successive queries and make sure
 // they're executed on the *same* connection and not separate connections
 // from the connection pool.
+class PostgresConnection {
+  constructor(pool, rawClient) {
+    this.pool = pool;
+    this.rawClient = rawClient;
+  }
 
-let postgresConnection = (() => {
-  var ref = _asyncToGenerator(function* (connection) {
-    let pool = pools[connection];
+  static pool(connectionString) {
+    let pool = POOLS[connectionString];
 
     if (pool == null) {
       const params = {
-        db: connection,
+        db: connectionString,
         max: 25,
-        idleTimeoutMillis: postgresConnection.idleTimeoutMillis,
-        reapIntervalMillis: postgresConnection.reapIntervalMillis
+        idleTimeoutMillis: PostgresConnection.idleTimeoutMillis,
+        reapIntervalMillis: PostgresConnection.reapIntervalMillis
       };
 
-      pool = pools[connection] = (0, _minipg.createPool)(params);
+      pool = POOLS[connectionString] = (0, _minipg.createPool)(params);
     }
 
-    return new Promise(function (resolve, reject) {
-      pool.acquire(function (err, client) {
-        if (err) {
-          reject(err);
-          return;
-        }
+    return pool;
+  }
 
-        // return a little object with a query method and a done method
-        const result = {
-          rawClient: client,
+  query() {
+    return new _postgresCursor2.default(this, this.rawClient.query(...arguments));
+  }
 
-          query: function query() {
-            const cursor = client.query.apply(client, arguments);
+  close() {
+    this.pool.release(this.rawClient);
+    this.rawClient = null;
+  }
 
-            const obj = {
-              isFinished: false,
+  static connect(connectionString) {
+    return _asyncToGenerator(function* () {
+      return new Promise(function (resolve, reject) {
+        const pool = PostgresConnection.pool(connectionString);
 
-              next: function next() {
-                return _asyncToGenerator(function* () {
-                  return new Promise(function (res, rej) {
-                    cursor.next(function (err, finished, columns, values, index) {
-                      obj.isFinished = finished;
-
-                      if (err) {
-                        return rej(err);
-                      }
-
-                      return res({ columns: columns, values: values });
-                    });
-                  });
-                })();
-              },
-              close: function close() {
-                var _this = this;
-
-                return _asyncToGenerator(function* () {
-                  // exhaust the cursor to completion
-                  while (!cursor.finished) {
-                    try {
-                      yield _this.next();
-                    } catch (ex) {
-                      console.warn('exception while closing cursor', ex);
-                    }
-                  }
-                })();
-              }
-            };
-
-            return obj;
-          },
-          done: function done() {
-            return _asyncToGenerator(function* () {
-              pool.release(client);
-            })();
+        pool.acquire(function (err, client) {
+          if (err) {
+            return reject(err);
           }
-        };
 
-        resolve(result);
+          return resolve(new PostgresConnection(pool, client));
+        });
       });
-    });
-  });
+    })();
+  }
 
-  return function postgresConnection(_x) {
-    return ref.apply(this, arguments);
-  };
-})();
+  static shutdown() {
+    for (const connection of Object.keys(POOLS)) {
+      const pool = POOLS[connection];
 
-var _minipg = require('minipg');
-
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
-
-const pools = {};
-
-postgresConnection.shutdown = () => {
-  for (const connection of Object.keys(pools)) {
-    const pool = pools[connection];
-
-    if (pool) {
-      pool.drain(() => {
-        pool.destroyAllNow();
-      });
+      if (pool) {
+        pool.drain(() => {
+          pool.destroyAllNow();
+        });
+      }
     }
   }
-};
+}
 
-postgresConnection.idleTimeoutMillis = null;
-postgresConnection.reapIntervalMillis = null;
-
-exports.default = postgresConnection;
+exports.default = PostgresConnection;
+PostgresConnection.idleTimeoutMillis = null;
+PostgresConnection.reapIntervalMillis = null;
 //# sourceMappingURL=postgres-connection.js.map
