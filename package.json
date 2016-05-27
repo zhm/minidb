@@ -20,7 +20,7 @@
     "extends": "fulcrum"
   },
   "dependencies": {
-    "minipg": "0.0.14",
+    "minipg": "0.0.15",
     "mixmatch": "0.0.2",
     "pg": "^4.5.5",
     "pg-format": "^1.0.2"
