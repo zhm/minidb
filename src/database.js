@@ -1,4 +1,4 @@
-import {format} from 'util';
+import { format } from 'util';
 import esc from './esc';
 
 export default class Database {
@@ -9,6 +9,12 @@ export default class Database {
   get verbose() {
     return false;
     // return true;
+  }
+
+  log(message) {
+    if (Database.debug) {
+      console.warn('[SQL]', message);
+    }
   }
 
   ident(value) {
@@ -138,7 +144,38 @@ export default class Database {
     return [ sets, values ];
   }
 
+  findEachByAttributes(options, callback) {
+    const statement = this.findStatement(options.tableName,
+                                         options.columns,
+                                         options.where,
+                                         options.orderBy,
+                                         options.limit,
+                                         options.offset);
+
+    return this.each(statement.sql, statement.values, callback);
+  }
+
   findAllByAttributes(tableName, columns, where, orderBy, limit, offset) {
+    const statement = this.findStatement(tableName, columns, where, orderBy, limit, offset);
+
+    return this.all(statement.sql, statement.values);
+  }
+
+  async findFirstByAttributes(tableName, columns, attributes, orderBy) {
+    const rows = await this.findAllByAttributes(tableName, columns, attributes, orderBy, 1);
+
+    return rows != null ? rows[0] : null;
+  }
+
+  trace() {
+    return null;
+  }
+
+  profile(sql, time) {
+    console.log('PROFILE', '(' + time + 'ms)', sql);
+  }
+
+  findStatement(tableName, columns, where, orderBy, limit, offset) {
     const selection = (columns == null ? [ '*' ] : columns);
 
     const [ clause, values ] = this.buildWhere(where);
@@ -166,21 +203,7 @@ export default class Database {
                        this.ident(tableName),
                        parts.join(''));
 
-    return this.all(sql, values);
-  }
-
-  async findFirstByAttributes(tableName, columns, attributes, orderBy) {
-    const rows = await this.findAllByAttributes(tableName, columns, attributes, orderBy, 1);
-
-    return rows != null ? rows[0] : null;
-  }
-
-  trace() {
-    return null;
-  }
-
-  profile(sql, time) {
-    console.log('PROFILE', '(' + time + 'ms)', sql);
+    return {sql, values};
   }
 
   insertStatement(table, attributes) {

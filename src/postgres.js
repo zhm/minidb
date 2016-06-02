@@ -42,6 +42,8 @@ export default class Postgres extends Database {
   }
 
   async each(sql, params, callback) {
+    this.log(sql);
+
     let close = false;
     let client = this.client;
     let cursor = null;
@@ -59,7 +61,7 @@ export default class Postgres extends Database {
 
         if (result && callback) {
           /* eslint-disable callback-return */
-          callback(result.columns, result.values, result.index);
+          await callback(result.columns, result.values, result.index);
           /* eslint-enable callback-return */
         }
       }
@@ -93,6 +95,8 @@ export default class Postgres extends Database {
   }
 
   async query(sql, params) {
+    this.log(sql);
+
     let client = this.client;
 
     if (client == null) {
@@ -139,7 +143,11 @@ export default class Postgres extends Database {
       await block(db);
       await db.commit();
     } catch (ex) {
-      await db.rollback();
+      try {
+        await db.rollback();
+      } catch (rollbackError) {
+        console.log('ERROR ROLLING BACK TRANSACTION', rollbackError);
+      }
       throw ex;
     } finally {
       await db.close();

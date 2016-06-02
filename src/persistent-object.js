@@ -51,6 +51,20 @@ export default class PersistentObject extends Mixin {
     });
   }
 
+  static findEach(ModelClass, db, options, callback) {
+    return db.findEachByAttributes({tableName: ModelClass.tableName, ...options}, async (columns, row, index) => {
+      if (row) {
+        const instance = new ModelClass();
+
+        instance.initializePersistentObject(db, row);
+
+        return await callback(instance, index, row, columns);
+      }
+
+      return null;
+    });
+  }
+
   static async findOrCreate(ModelClass, db, attributes) {
     const row = await db.findFirstByAttributes(ModelClass.tableName, null, attributes);
 
@@ -76,7 +90,7 @@ export default class PersistentObject extends Mixin {
   }
 
   static get modelMethods() {
-    return [ 'findFirst', 'findAll', 'findOrCreate', 'create', 'count' ];
+    return [ 'findFirst', 'findAll', 'findEach', 'findOrCreate', 'create', 'count' ];
   }
 
   static get models() {
