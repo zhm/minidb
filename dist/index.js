@@ -3,7 +3,11 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.SQLite = exports.PostgresConnection = exports.Postgres = exports.PersistentObject = undefined;
+exports.SQLite = exports.PostgresConnection = exports.Postgres = exports.PersistentObject = exports.Database = undefined;
+
+var _database = require('./database');
+
+var _database2 = _interopRequireDefault(_database);
 
 var _persistentObject = require('./persistent-object');
 
@@ -23,6 +27,7 @@ var _sqlite2 = _interopRequireDefault(_sqlite);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+exports.Database = _database2.default;
 exports.PersistentObject = _persistentObject2.default;
 exports.Postgres = _postgres2.default;
 exports.PostgresConnection = _postgresConnection2.default;

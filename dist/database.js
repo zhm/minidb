@@ -26,6 +26,12 @@ class Database {
     // return true;
   }
 
+  log(message) {
+    if (Database.debug) {
+      console.warn('[SQL]', message);
+    }
+  }
+
   ident(value) {
     return (0, _esc2.default)(value, '`');
   }
@@ -173,7 +179,37 @@ class Database {
     return [sets, values];
   }
 
+  findEachByAttributes(options, callback) {
+    const statement = this.findStatement(options.tableName, options.columns, options.where, options.orderBy, options.limit, options.offset);
+
+    return this.each(statement.sql, statement.values, callback);
+  }
+
   findAllByAttributes(tableName, columns, where, orderBy, limit, offset) {
+    const statement = this.findStatement(tableName, columns, where, orderBy, limit, offset);
+
+    return this.all(statement.sql, statement.values);
+  }
+
+  findFirstByAttributes(tableName, columns, attributes, orderBy) {
+    var _this4 = this;
+
+    return _asyncToGenerator(function* () {
+      const rows = yield _this4.findAllByAttributes(tableName, columns, attributes, orderBy, 1);
+
+      return rows != null ? rows[0] : null;
+    })();
+  }
+
+  trace() {
+    return null;
+  }
+
+  profile(sql, time) {
+    console.log('PROFILE', '(' + time + 'ms)', sql);
+  }
+
+  findStatement(tableName, columns, where, orderBy, limit, offset) {
     const selection = columns == null ? ['*'] : columns;
 
     var _buildWhere = this.buildWhere(where);
@@ -204,25 +240,7 @@ class Database {
 
     const sql = (0, _util.format)('SELECT %s FROM %s%s', selection.join(', '), this.ident(tableName), parts.join(''));
 
-    return this.all(sql, values);
-  }
-
-  findFirstByAttributes(tableName, columns, attributes, orderBy) {
-    var _this4 = this;
-
-    return _asyncToGenerator(function* () {
-      const rows = yield _this4.findAllByAttributes(tableName, columns, attributes, orderBy, 1);
-
-      return rows != null ? rows[0] : null;
-    })();
-  }
-
-  trace() {
-    return null;
-  }
-
-  profile(sql, time) {
-    console.log('PROFILE', '(' + time + 'ms)', sql);
+    return { sql: sql, values: values };
   }
 
   insertStatement(table, attributes) {

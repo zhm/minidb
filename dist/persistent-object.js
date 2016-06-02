@@ -4,6 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _util = require('util');
 
 var _mixmatch = require('mixmatch');
@@ -68,6 +70,26 @@ class PersistentObject extends _mixmatch2.default {
     })();
   }
 
+  static findEach(ModelClass, db, options, callback) {
+    return db.findEachByAttributes(_extends({ tableName: ModelClass.tableName }, options), (() => {
+      var ref = _asyncToGenerator(function* (columns, row, index) {
+        if (row) {
+          const instance = new ModelClass();
+
+          instance.initializePersistentObject(db, row);
+
+          return yield callback(instance, index, row, columns);
+        }
+
+        return null;
+      });
+
+      return function (_x, _x2, _x3) {
+        return ref.apply(this, arguments);
+      };
+    })());
+  }
+
   static findOrCreate(ModelClass, db, attributes) {
     return _asyncToGenerator(function* () {
       const row = yield db.findFirstByAttributes(ModelClass.tableName, null, attributes);
@@ -97,7 +119,7 @@ class PersistentObject extends _mixmatch2.default {
   }
 
   static get modelMethods() {
-    return ['findFirst', 'findAll', 'findOrCreate', 'create', 'count'];
+    return ['findFirst', 'findAll', 'findEach', 'findOrCreate', 'create', 'count'];
   }
 
   static get models() {

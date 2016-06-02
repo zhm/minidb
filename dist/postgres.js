@@ -75,6 +75,8 @@ class Postgres extends _database2.default {
     var _this = this;
 
     return _asyncToGenerator(function* () {
+      _this.log(sql);
+
       let close = false;
       let client = _this.client;
       let cursor = null;
@@ -92,7 +94,7 @@ class Postgres extends _database2.default {
 
           if (result && callback) {
             /* eslint-disable callback-return */
-            callback(result.columns, result.values, result.index);
+            yield callback(result.columns, result.values, result.index);
             /* eslint-enable callback-return */
           }
         }
@@ -138,6 +140,8 @@ class Postgres extends _database2.default {
     var _this4 = this;
 
     return _asyncToGenerator(function* () {
+      _this4.log(sql);
+
       let client = _this4.client;
 
       if (client == null) {
@@ -188,7 +192,11 @@ class Postgres extends _database2.default {
         yield block(db);
         yield db.commit();
       } catch (ex) {
-        yield db.rollback();
+        try {
+          yield db.rollback();
+        } catch (rollbackError) {
+          console.log('ERROR ROLLING BACK TRANSACTION', rollbackError);
+        }
         throw ex;
       } finally {
         yield db.close();
