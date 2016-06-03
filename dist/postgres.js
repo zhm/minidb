@@ -214,8 +214,10 @@ class Postgres extends _database2.default {
         try {
           yield db.rollback();
         } catch (rollbackError) {
-          console.log('ERROR ROLLING BACK TRANSACTION', rollbackError);
+          yield db.close();
+          throw rollbackError;
         }
+
         throw ex;
       } finally {
         yield db.close();
