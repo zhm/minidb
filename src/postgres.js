@@ -159,8 +159,10 @@ export default class Postgres extends Database {
       try {
         await db.rollback();
       } catch (rollbackError) {
-        console.log('ERROR ROLLING BACK TRANSACTION', rollbackError);
+        await db.close();
+        throw rollbackError;
       }
+
       throw ex;
     } finally {
       await db.close();

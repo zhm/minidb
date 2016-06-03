@@ -41,4 +41,38 @@ describe('postgres', () => {
       done(ex);
     }
   });
+
+  it('fails gracefully on transaction error', async (done) => {
+    try {
+      const db = new Postgres({db: 'dbname = minidb'});
+
+      const errors = [];
+
+      try {
+        await db.transaction(async (database) => {
+          await database.execute('DROP TABLE IF EXISTS test_table');
+          await database.execute('CREATE TABLE IF NOT EXISTS test_table (id bigserial NOT NULL, name text)');
+          await database.execute('DROP TABLE does_not_exist');
+        });
+      } catch (ex) {
+        errors.push(ex);
+      }
+
+      try {
+        await db.transaction(async (database) => {
+          await database.execute('DROP TABLE IF EXISTS test_table');
+          await database.execute('CREATE TABLE IF NOT EXISTS test_table (id bigserial NOT NULL, name text)');
+          await database.execute('DROP TABLE does_not_exist');
+        });
+      } catch (ex) {
+        errors.push(ex);
+      }
+
+      errors.length.should.eql(2);
+
+      done();
+    } catch (ex) {
+      done(ex);
+    }
+  });
 });
