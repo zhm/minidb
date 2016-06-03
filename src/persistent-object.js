@@ -217,11 +217,19 @@ export default class PersistentObject extends Mixin {
   async loadOne(name, model, id) {
     const ivar = '_' + name;
 
+    const pk = id || this[ivar + 'RowID'];
+
+    if (pk == null) {
+      return null;
+    }
+
     if (this[ivar]) {
       return this[ivar];
     }
 
-    this[ivar] = await model.findFirst(this.db, {id: id || this[ivar + 'RowID']});
+    const instance = await model.findFirst(this.db, {id: pk});
+
+    this.setOne(name, instance);
 
     return this[ivar];
   }
@@ -231,9 +239,11 @@ export default class PersistentObject extends Mixin {
 
     if (instance) {
       this[ivar] = instance;
+      this[ivar + 'ID'] = instance.id;
       this[ivar + 'RowID'] = instance.rowID;
     } else {
       this[ivar] = null;
+      this[ivar + 'ID'] = null;
       this[ivar + 'RowID'] = null;
     }
   }
