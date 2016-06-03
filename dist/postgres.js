@@ -132,7 +132,26 @@ class Postgres extends _database2.default {
     var _this3 = this;
 
     return _asyncToGenerator(function* () {
-      yield _this3.each(sql, [], null);
+      let columns = null;
+      const rows = [];
+
+      yield _this3.each(sql, [], (() => {
+        var ref = _asyncToGenerator(function* (cols, values, index) {
+          if (columns == null) {
+            columns = cols;
+          }
+
+          if (values) {
+            rows.push(values);
+          }
+        });
+
+        return function (_x, _x2, _x3) {
+          return ref.apply(this, arguments);
+        };
+      })());
+
+      return { rows: rows, columns: columns };
     })();
   }
 
