@@ -20,14 +20,14 @@
     "extends": "fulcrum"
   },
   "dependencies": {
-    "minipg": "0.0.15",
+    "minipg": "0.0.16",
     "mixmatch": "0.0.2",
-    "pg": "^4.5.5",
+    "pg": "^4.5.6",
     "pg-format": "^1.0.2"
   },
   "devDependencies": {
     "babel-cli": "^6.9.0",
-    "babel-core": "^6.9.0",
+    "babel-core": "^6.9.1",
     "babel-eslint": "^6.0.4",
     "babel-preset-es2015-node5": "^1.2.0",
     "babel-preset-stage-1": "^6.5.0",
@@ -36,11 +36,11 @@
     "chai": "^3.5.0",
     "chai-as-promised": "^5.3.0",
     "cson": "^3.0.2",
-    "eslint": "^2.10.2",
+    "eslint": "^2.11.1",
     "glob": "^7.0.3",
     "mocha": "^2.5.3",
     "rimraf": "^2.5.2",
-    "should": "^8.4.0",
+    "should": "^9.0.0",
     "source-map-support": "^0.4.0",
     "sqlite3": "^3.1.4"
   }
