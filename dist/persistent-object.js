@@ -261,11 +261,19 @@ class PersistentObject extends _mixmatch2.default {
     return _asyncToGenerator(function* () {
       const ivar = '_' + name;
 
+      const pk = id || _this3[ivar + 'RowID'];
+
+      if (pk == null) {
+        return null;
+      }
+
       if (_this3[ivar]) {
         return _this3[ivar];
       }
 
-      _this3[ivar] = yield model.findFirst(_this3.db, { id: id || _this3[ivar + 'RowID'] });
+      const instance = yield model.findFirst(_this3.db, { id: pk });
+
+      _this3.setOne(name, instance);
 
       return _this3[ivar];
     })();
@@ -276,9 +284,11 @@ class PersistentObject extends _mixmatch2.default {
 
     if (instance) {
       this[ivar] = instance;
+      this[ivar + 'ID'] = instance.id;
       this[ivar + 'RowID'] = instance.rowID;
     } else {
       this[ivar] = null;
+      this[ivar + 'ID'] = null;
       this[ivar + 'RowID'] = null;
     }
   }
