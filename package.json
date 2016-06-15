@@ -1,6 +1,6 @@
 {
   "name": "minidb",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "Mini ORM",
   "main": "dist/index.js",
   "repository": {
@@ -20,7 +20,7 @@
     "extends": "fulcrum"
   },
   "dependencies": {
-    "minipg": "^0.0.18",
+    "minipg": "^0.0.19",
     "mixmatch": "^0.0.2",
     "pg": "^4.5.6",
     "pg-format": "^1.0.2"
