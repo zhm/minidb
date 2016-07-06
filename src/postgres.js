@@ -73,7 +73,13 @@ export default class Postgres extends Database {
       throw ex;
     } finally {
       if (cursor) {
-        await cursor.close();
+        try {
+          await cursor.close();
+        } catch (err) {
+          // Closing the cursor on a connection where there was a previous error rethrows the same error
+          // This is because pumping the cursor to completion ends up carrying the original error to
+          // the end. This is desired behavior, we just have to swallow any potential errors here.
+        }
       }
 
       if (close) {

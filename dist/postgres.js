@@ -106,7 +106,13 @@ class Postgres extends _database2.default {
         throw ex;
       } finally {
         if (cursor) {
-          yield cursor.close();
+          try {
+            yield cursor.close();
+          } catch (err) {
+            // Closing the cursor on a connection where there was a previous error rethrows the same error
+            // This is because pumping the cursor to completion ends up carrying the original error to
+            // the end. This is desired behavior, we just have to swallow any potential errors here.
+          }
         }
 
         if (close) {
