@@ -12,11 +12,25 @@ var _mixmatch = require('mixmatch');
 
 var _mixmatch2 = _interopRequireDefault(_mixmatch);
 
+var _assert = require('assert');
+
+var _assert2 = _interopRequireDefault(_assert);
+
+var _database = require('./database');
+
+var _database2 = _interopRequireDefault(_database);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 const models = [];
+
+function checkDatabase(db) {
+  (0, _assert2.default)(db instanceof _database2.default, 'invalid db');
+}
 
 class PersistentObject extends _mixmatch2.default {
   constructor(db, attributes) {
@@ -35,9 +49,16 @@ class PersistentObject extends _mixmatch2.default {
 
   initializePersistentObject(db, attributes) {
     this._db = db;
-    this.updateFromDatabaseAttributes(attributes || {});
+
+    this.updateFromDatabaseAttributes(attributes || {}, db);
 
     return this;
+  }
+
+  static findFirstColumns(ModelClass, db, attributes, columns) {
+    return _asyncToGenerator(function* () {
+      return yield db.findFirstByAttributes(ModelClass.tableName, columns, attributes);
+    })();
   }
 
   static findFirst(ModelClass, db, attributes) {
@@ -53,6 +74,12 @@ class PersistentObject extends _mixmatch2.default {
       }
 
       return null;
+    })();
+  }
+
+  static findAllColumns(ModelClass, db, attributes, columns) {
+    return _asyncToGenerator(function* () {
+      return yield db.findAllByAttributes(ModelClass.tableName, columns, attributes);
     })();
   }
 
@@ -72,7 +99,7 @@ class PersistentObject extends _mixmatch2.default {
 
   static findEach(ModelClass, db, options, callback) {
     return db.findEachByAttributes(_extends({ tableName: ModelClass.tableName }, options), (() => {
-      var ref = _asyncToGenerator(function* (columns, row, index) {
+      var _ref = _asyncToGenerator(function* (columns, row, index) {
         if (row) {
           const instance = new ModelClass();
 
@@ -85,7 +112,7 @@ class PersistentObject extends _mixmatch2.default {
       });
 
       return function (_x, _x2, _x3) {
-        return ref.apply(this, arguments);
+        return _ref.apply(this, arguments);
       };
     })());
   }
@@ -119,7 +146,7 @@ class PersistentObject extends _mixmatch2.default {
   }
 
   static get modelMethods() {
-    return ['findFirst', 'findAll', 'findEach', 'findOrCreate', 'create', 'count'];
+    return ['findFirst', 'findFirstColumns', 'findAll', 'findAllColumns', 'findEach', 'findOrCreate', 'create', 'count'];
   }
 
   static get models() {
@@ -147,11 +174,53 @@ class PersistentObject extends _mixmatch2.default {
     }
   }
 
-  updateFromDatabaseAttributes(attributes) {
-    this._updateFromDatabaseAttributes(attributes);
+  assignAttributes(attributes) {
+    this._assignAttributes(attributes);
   }
 
-  _updateFromDatabaseAttributes(attributes) {
+  _assignAttributes(attributes) {
+    for (const key of Object.keys(attributes)) {
+      const column = this.columnsByColumnName[key];
+
+      if (column) {
+        this['_' + column.name] = attributes[column.column];
+      }
+    }
+  }
+
+  _buildColumns() {
+    const byColumnName = this.constructor._columnsByColumnName = {};
+    const byAttributeName = this.constructor._columnsByAttributeName = {};
+
+    for (const column of this.constructor.columns) {
+      byColumnName[column.column] = column;
+      byAttributeName[column.name] = column;
+    }
+  }
+
+  get columnsByColumnName() {
+    if (!this.constructor._columnsByColumnName) {
+      this._buildColumns();
+    }
+    return this.constructor._columnsByColumnName;
+  }
+
+  get columnsByAttributeName() {
+    if (!this.constructor._columnsByAttributeName) {
+      this._buildColumns();
+    }
+    return this.constructor._columnsByAttributeName;
+  }
+
+  updateFromDatabaseAttributes(attributes, db) {
+    this._updateFromDatabaseAttributes(attributes, db || this.db);
+  }
+
+  _updateFromDatabaseAttributes(attributes, db) {
+    db = db || this.db;
+
+    checkDatabase(db);
+
     for (const column of this.constructor.columns) {
       const name = '_' + column.name;
       const value = attributes[column.column];
@@ -160,31 +229,44 @@ class PersistentObject extends _mixmatch2.default {
       //   console.warn(format('column %s cannot be null', name));
       // }
 
-      this[name] = this.db.fromDatabase(value, column);
+      this[name] = db.fromDatabase(value, column);
     }
 
     this._rowID = this.toNumber(attributes.id);
   }
 
-  get databaseValues() {
+  attributes() {
+    const values = {};
+
+    for (const column of this.constructor.columns) {
+      const name = column.name;
+
+      values['_' + name] = this['_' + name];
+    }
+
+    return values;
+  }
+
+  databaseValues(db) {
+    db = db || this.db;
+
+    checkDatabase(db);
+
     const values = {};
 
     for (const column of this.constructor.columns) {
       const name = column.name;
       const value = this['_' + name];
 
-      if (value == null && column.null === false) {
-        throw Error((0, _util.format)('column %s cannot be null', name));
-      }
+      // TODO(zhm) this doesn't work with the id attribute
+      // if (value == null && column.null === false) {
+      //   throw Error(format('column %s cannot be null', name));
+      // }
 
-      values[column.column] = this.db.toDatabase(value, column);
+      values[column.column] = db.toDatabase(value, column);
     }
 
     return values;
-  }
-
-  get changes() {
-    return this.databaseValues;
   }
 
   toNumber(integer) {
@@ -205,46 +287,59 @@ class PersistentObject extends _mixmatch2.default {
     return this.rowID > 0;
   }
 
-  save(opts) {
+  save() {
     var _this = this;
 
+    let _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    let db = _ref2.db,
+        timestamps = _ref2.timestamps,
+        rest = _objectWithoutProperties(_ref2, ['db', 'timestamps']);
+
     return _asyncToGenerator(function* () {
-      const options = opts || {};
+      db = db || _this.db;
+
+      checkDatabase(db);
 
       if (_this.beforeSave) {
-        yield _this.beforeSave(options);
+        const result = yield _this.beforeSave(_extends({ db: db, timestamps: timestamps }, rest));
+
+        if (result === false) {
+          return _this;
+        }
       }
 
-      const values = _this.databaseValues;
-
-      if (options.timestamps !== false) {
+      if (timestamps !== false) {
         _this.updateTimestamps();
       }
 
-      values.created_at = _this.db.toDatabase(_this.createdAt, { type: 'datetime' });
-      values.updated_at = _this.db.toDatabase(_this.updatedAt, { type: 'datetime' });
+      const values = _this.databaseValues(db);
+
+      values.created_at = db.toDatabase(_this.createdAt, { type: 'datetime' });
+      values.updated_at = db.toDatabase(_this.updatedAt, { type: 'datetime' });
 
       if (!_this.isPersisted) {
-        _this._rowID = yield _this.db.insert(_this.constructor.tableName, values, { pk: 'id' });
+        _this._rowID = yield db.insert(_this.constructor.tableName, values, { pk: 'id' });
       } else {
-        yield _this.db.update(_this.constructor.tableName, { id: _this.rowID }, values);
+        yield db.update(_this.constructor.tableName, { id: _this.rowID }, values);
       }
 
       // It's not possible to override `async` methods currently (and be able to use `super`)
       if (_this.afterSave) {
-        yield _this.afterSave(options);
+        yield _this.afterSave(_extends({ db: db, timestamps: timestamps }, rest));
       }
 
       return _this;
     })();
   }
 
-  delete(opts) {
+  delete(_ref3) {
     var _this2 = this;
 
+    let db = _ref3.db;
     return _asyncToGenerator(function* () {
       if (_this2.isPersisted) {
-        yield _this2.db.delete(_this2.constructor.tableName, { id: _this2.rowID });
+        yield db.delete(_this2.constructor.tableName, { id: _this2.rowID });
 
         _this2._rowID = null;
         _this2.createdAt = null;
@@ -255,10 +350,14 @@ class PersistentObject extends _mixmatch2.default {
     })();
   }
 
-  loadOne(name, model, id) {
+  loadOne(name, model, id, db) {
     var _this3 = this;
 
     return _asyncToGenerator(function* () {
+      db = db || _this3.db;
+
+      checkDatabase(db);
+
       const ivar = '_' + name;
 
       const pk = id || _this3[ivar + 'RowID'];
@@ -271,7 +370,7 @@ class PersistentObject extends _mixmatch2.default {
         return _this3[ivar];
       }
 
-      const instance = yield model.findFirst(_this3.db, { id: pk });
+      const instance = yield model.findFirst(db, { id: pk });
 
       _this3.setOne(name, instance);
 

@@ -12,9 +12,22 @@ var _esc = require('./esc');
 
 var _esc2 = _interopRequireDefault(_esc);
 
+var _humanizeDuration = require('humanize-duration');
+
+var _humanizeDuration2 = _interopRequireDefault(_humanizeDuration);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+const shortEnglishHumanizer = _humanizeDuration2.default.humanizer({
+  language: 'shortEn',
+  languages: {
+    shortEn: {
+      ms: () => 'ms'
+    }
+  }
+});
 
 class Database {
   constructor(options) {
@@ -27,9 +40,38 @@ class Database {
   }
 
   log(message) {
-    if (Database.debug) {
-      console.warn('[SQL]', message);
-    }
+    // if (Database.debug) {
+    //   console.warn('[SQL]', message);
+    // }
+  }
+
+  static measure(text, block) {
+    return _asyncToGenerator(function* () {
+      if (!Database.debug) {
+        return yield block();
+      }
+
+      const start = new Date().getTime();
+
+      let result = null;
+      let error = null;
+
+      try {
+        result = yield block();
+      } catch (ex) {
+        error = ex;
+      }
+
+      const total = new Date().getTime() - start;
+
+      console.log('[SQL][' + shortEnglishHumanizer(total, { spacer: '', units: ['ms'] }) + ']' + (error ? '[ERROR] ' : ' ') + text);
+
+      if (error) {
+        throw error;
+      }
+
+      return result;
+    })();
   }
 
   ident(value) {
@@ -53,14 +95,22 @@ class Database {
   }
 
   each(sql, params, callback) {
+    var _this = this;
+
     return _asyncToGenerator(function* () {
-      return null;
+      return yield Database.measure(sql, _asyncToGenerator(function* () {
+        return yield _this._each(sql, params, callback);
+      }));
     })();
   }
 
   execute(sql, params) {
+    var _this2 = this;
+
     return _asyncToGenerator(function* () {
-      return null;
+      return yield Database.measure(sql, _asyncToGenerator(function* () {
+        return yield _this2._execute(sql, params);
+      }));
     })();
   }
 
@@ -77,29 +127,29 @@ class Database {
   }
 
   transaction(block) {
-    var _this = this;
+    var _this3 = this;
 
     return _asyncToGenerator(function* () {
-      yield _this.beginTransaction();
+      yield _this3.beginTransaction();
 
       try {
-        yield block(_this);
-        yield _this.commit();
+        yield block(_this3);
+        yield _this3.commit();
       } catch (ex) {
         console.log('ERROR IN TRANSACTION', ex);
-        yield _this.rollback();
+        yield _this3.rollback();
         throw ex;
       }
     })();
   }
 
   all(sql, params) {
-    var _this2 = this;
+    var _this4 = this;
 
     return _asyncToGenerator(function* () {
       const rows = [];
 
-      yield _this2.each(sql, params, function (columns, row, index) {
+      yield _this4.each(sql, params, function (columns, row, index) {
         if (row) {
           rows.push(row);
         }
@@ -110,12 +160,12 @@ class Database {
   }
 
   get(sql, params) {
-    var _this3 = this;
+    var _this5 = this;
 
     return _asyncToGenerator(function* () {
       const rows = [];
 
-      yield _this3.each(sql, params, function (columns, row, index) {
+      yield _this5.each(sql, params, function (columns, row, index) {
         if (row) {
           rows.push(row);
         }
@@ -192,10 +242,10 @@ class Database {
   }
 
   findFirstByAttributes(tableName, columns, attributes, orderBy) {
-    var _this4 = this;
+    var _this6 = this;
 
     return _asyncToGenerator(function* () {
-      const rows = yield _this4.findAllByAttributes(tableName, columns, attributes, orderBy, 1);
+      const rows = yield _this6.findAllByAttributes(tableName, columns, attributes, orderBy, 1);
 
       return rows != null ? rows[0] : null;
     })();
@@ -212,12 +262,11 @@ class Database {
   findStatement(tableName, columns, where, orderBy, limit, offset) {
     const selection = columns == null ? ['*'] : columns;
 
-    var _buildWhere = this.buildWhere(where);
+    var _buildWhere = this.buildWhere(where),
+        _buildWhere2 = _slicedToArray(_buildWhere, 2);
 
-    var _buildWhere2 = _slicedToArray(_buildWhere, 2);
-
-    const clause = _buildWhere2[0];
-    const values = _buildWhere2[1];
+    const clause = _buildWhere2[0],
+          values = _buildWhere2[1];
 
 
     const parts = [];
@@ -244,13 +293,12 @@ class Database {
   }
 
   insertStatement(table, attributes) {
-    var _buildInsert = this.buildInsert(attributes);
+    var _buildInsert = this.buildInsert(attributes),
+        _buildInsert2 = _slicedToArray(_buildInsert, 3);
 
-    var _buildInsert2 = _slicedToArray(_buildInsert, 3);
-
-    const names = _buildInsert2[0];
-    const placeholders = _buildInsert2[1];
-    const values = _buildInsert2[2];
+    const names = _buildInsert2[0],
+          placeholders = _buildInsert2[1],
+          values = _buildInsert2[2];
 
 
     const sql = (0, _util.format)('INSERT INTO %s (%s)\nVALUES (%s);', table, names.join(', '), placeholders.join(', '));
@@ -261,12 +309,11 @@ class Database {
   updateStatement(table, where, attributes, options) {
     const values = [];
 
-    var _buildUpdate = this.buildUpdate(attributes);
+    var _buildUpdate = this.buildUpdate(attributes),
+        _buildUpdate2 = _slicedToArray(_buildUpdate, 2);
 
-    var _buildUpdate2 = _slicedToArray(_buildUpdate, 2);
-
-    const sets = _buildUpdate2[0];
-    const updateValues = _buildUpdate2[1];
+    const sets = _buildUpdate2[0],
+          updateValues = _buildUpdate2[1];
 
 
     values.push.apply(values, updateValues);
@@ -277,12 +324,11 @@ class Database {
       }
     }
 
-    var _buildWhere3 = this.buildWhere(where);
+    var _buildWhere3 = this.buildWhere(where),
+        _buildWhere4 = _slicedToArray(_buildWhere3, 2);
 
-    var _buildWhere4 = _slicedToArray(_buildWhere3, 2);
-
-    const clause = _buildWhere4[0];
-    const whereValues = _buildWhere4[1];
+    const clause = _buildWhere4[0],
+          whereValues = _buildWhere4[1];
 
 
     values.push.apply(values, whereValues);
@@ -295,12 +341,11 @@ class Database {
   }
 
   deleteStatement(table, where) {
-    var _buildWhere5 = this.buildWhere(where);
+    var _buildWhere5 = this.buildWhere(where),
+        _buildWhere6 = _slicedToArray(_buildWhere5, 2);
 
-    var _buildWhere6 = _slicedToArray(_buildWhere5, 2);
-
-    const clause = _buildWhere6[0];
-    const values = _buildWhere6[1];
+    const clause = _buildWhere6[0],
+          values = _buildWhere6[1];
 
 
     const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
@@ -311,36 +356,36 @@ class Database {
   }
 
   insert(table, attributes, options) {
-    var _this5 = this;
+    var _this7 = this;
 
     return _asyncToGenerator(function* () {
-      const statement = _this5.insertStatement(table, attributes);
+      const statement = _this7.insertStatement(table, attributes);
 
-      yield _this5.execute(statement.sql, statement.values);
+      yield _this7.execute(statement.sql, statement.values);
 
-      return _this5.lastID;
+      return _this7.lastID;
     })();
   }
 
   update(table, where, attributes, options) {
-    var _this6 = this;
+    var _this8 = this;
 
     return _asyncToGenerator(function* () {
-      const statement = _this6.updateStatement(table, where, attributes, options);
+      const statement = _this8.updateStatement(table, where, attributes, options);
 
-      yield _this6.execute(statement.sql, statement.values);
+      yield _this8.execute(statement.sql, statement.values);
 
       return null;
     })();
   }
 
   delete(table, where, options) {
-    var _this7 = this;
+    var _this9 = this;
 
     return _asyncToGenerator(function* () {
-      const statement = _this7.deleteStatement(table, where);
+      const statement = _this9.deleteStatement(table, where);
 
-      yield _this7.execute(statement.sql, statement.values);
+      yield _this9.execute(statement.sql, statement.values);
 
       return null;
     })();

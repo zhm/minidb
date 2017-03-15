@@ -32,7 +32,7 @@ var _database2 = _interopRequireDefault(_database);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 // Parse bigints as `Number` objects. If a caller *really* knows their
 // number cannot fit in a JS Number, it can be casted to `text` in
@@ -71,7 +71,7 @@ class Postgres extends _database2.default {
     return 'postgresql';
   }
 
-  each(sql, params, callback) {
+  _each(sql, params, callback) {
     var _this = this;
 
     return _asyncToGenerator(function* () {
@@ -134,15 +134,15 @@ class Postgres extends _database2.default {
     })();
   }
 
-  execute(sql, params) {
+  _execute(sql, params) {
     var _this3 = this;
 
     return _asyncToGenerator(function* () {
       let columns = null;
       const rows = [];
 
-      yield _this3.each(sql, [], (() => {
-        var ref = _asyncToGenerator(function* (cols, values, index) {
+      yield _this3._each(sql, [], (() => {
+        var _ref = _asyncToGenerator(function* (cols, values, index) {
           if (columns == null) {
             columns = cols;
           }
@@ -153,7 +153,7 @@ class Postgres extends _database2.default {
         });
 
         return function (_x, _x2, _x3) {
-          return ref.apply(this, arguments);
+          return _ref.apply(this, arguments);
         };
       })());
 
@@ -232,6 +232,10 @@ class Postgres extends _database2.default {
   }
 
   static transaction(options, block) {
+    if (options instanceof Postgres) {
+      return options.transaction(block);
+    }
+
     return new Postgres(options).transaction(block);
   }
 
@@ -276,7 +280,7 @@ class Postgres extends _database2.default {
   }
 
   buildInsert(attributes) {
-    let includeNames = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+    let includeNames = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
 
     const names = [];
     const values = [];
@@ -329,13 +333,12 @@ class Postgres extends _database2.default {
       throw new Error('pk is required');
     }
 
-    var _buildInsert = this.buildInsert(attributes);
+    var _buildInsert = this.buildInsert(attributes),
+        _buildInsert2 = _slicedToArray(_buildInsert, 3);
 
-    var _buildInsert2 = _slicedToArray(_buildInsert, 3);
-
-    const names = _buildInsert2[0];
-    const placeholders = _buildInsert2[1];
-    const values = _buildInsert2[2];
+    const names = _buildInsert2[0],
+          placeholders = _buildInsert2[1],
+          values = _buildInsert2[2];
 
 
     const returning = options && options.returnPrimaryKey === false ? '' : ' RETURNING ' + options.pk;

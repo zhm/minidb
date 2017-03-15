@@ -18,7 +18,7 @@ var _database2 = _interopRequireDefault(_database);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new _bluebird2.default(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return _bluebird2.default.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new _bluebird2.default(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return _bluebird2.default.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 class SQLite extends _database2.default {
   get dialect() {
@@ -31,8 +31,8 @@ class SQLite extends _database2.default {
     return _asyncToGenerator(function* () {
       // https://phabricator.babeljs.io/T2765
       var _options = _this.options;
-      const file = _options.file;
-      const mode = _options.mode;
+      const file = _options.file,
+            mode = _options.mode;
 
 
       const defaultMode = _sqlite2.default.OPEN_READWRITE | _sqlite2.default.OPEN_CREATE;
