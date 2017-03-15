@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "npm run lint && node_modules/.bin/mocha ./test/setup.js test/sqlite/*.js test/postgres/*.js",
-    "prepublish": "npm run lint && npm run clean && npm run build",
+    "prepublish": "npm run clean && npm run build",
     "lint": "node_modules/.bin/eslint src",
     "build": "node_modules/.bin/babel src --out-dir dist --source-maps",
     "clean": "rm -rf dist"
