@@ -1,6 +1,6 @@
 {
   "name": "minidb",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Mini ORM",
   "main": "dist/index.js",
   "repository": {
@@ -20,6 +20,8 @@
     "extends": "fulcrum"
   },
   "dependencies": {
+    "bluebird": "^3.5.0",
+    "humanize-duration": "^3.10.0",
     "minipg": "^0.1.0",
     "mixmatch": "^0.0.2",
     "pg": "^4.5.6",
@@ -31,12 +33,12 @@
     "babel-eslint": "^6.0.4",
     "babel-preset-es2015-node5": "^1.2.0",
     "babel-preset-stage-1": "^6.5.0",
-    "eslint-config-fulcrum": "^1.0.2",
-    "eslint-plugin-react": "^5.1.1",
     "chai": "^3.5.0",
     "chai-as-promised": "^5.3.0",
     "cson": "^3.0.2",
     "eslint": "^2.11.1",
+    "eslint-config-fulcrum": "^1.0.2",
+    "eslint-plugin-react": "^5.1.1",
     "glob": "^7.0.3",
     "mocha": "^2.5.3",
     "rimraf": "^2.5.2",

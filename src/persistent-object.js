@@ -1,7 +1,13 @@
 import {format} from 'util';
 import Mixin from 'mixmatch';
+import assert from 'assert';
+import Database from './database';
 
 const models = [];
+
+function checkDatabase(db) {
+  assert(db instanceof Database, 'invalid db');
+}
 
 export default class PersistentObject extends Mixin {
   constructor(db, attributes) {
@@ -20,9 +26,14 @@ export default class PersistentObject extends Mixin {
 
   initializePersistentObject(db, attributes) {
     this._db = db;
-    this.updateFromDatabaseAttributes(attributes || {});
+
+    this.updateFromDatabaseAttributes(attributes || {}, db);
 
     return this;
+  }
+
+  static async findFirstColumns(ModelClass, db, attributes, columns) {
+    return await db.findFirstByAttributes(ModelClass.tableName, columns, attributes);
   }
 
   static async findFirst(ModelClass, db, attributes) {
@@ -37,6 +48,10 @@ export default class PersistentObject extends Mixin {
     }
 
     return null;
+  }
+
+  static async findAllColumns(ModelClass, db, attributes, columns) {
+    return await db.findAllByAttributes(ModelClass.tableName, columns, attributes);
   }
 
   static async findAll(ModelClass, db, attributes, orderBy) {
@@ -90,7 +105,7 @@ export default class PersistentObject extends Mixin {
   }
 
   static get modelMethods() {
-    return [ 'findFirst', 'findAll', 'findEach', 'findOrCreate', 'create', 'count' ];
+    return [ 'findFirst', 'findFirstColumns', 'findAll', 'findAllColumns', 'findEach', 'findOrCreate', 'create', 'count' ];
   }
 
   static get models() {
@@ -114,11 +129,53 @@ export default class PersistentObject extends Mixin {
     }
   }
 
-  updateFromDatabaseAttributes(attributes) {
-    this._updateFromDatabaseAttributes(attributes);
+  assignAttributes(attributes) {
+    this._assignAttributes(attributes);
   }
 
-  _updateFromDatabaseAttributes(attributes) {
+  _assignAttributes(attributes) {
+    for (const key of Object.keys(attributes)) {
+      const column = this.columnsByColumnName[key];
+
+      if (column) {
+        this['_' + column.name] = attributes[column.column];
+      }
+    }
+  }
+
+  _buildColumns() {
+    const byColumnName = this.constructor._columnsByColumnName = {};
+    const byAttributeName = this.constructor._columnsByAttributeName = {};
+
+    for (const column of this.constructor.columns) {
+      byColumnName[column.column] = column;
+      byAttributeName[column.name] = column;
+    }
+  }
+
+  get columnsByColumnName() {
+    if (!this.constructor._columnsByColumnName) {
+      this._buildColumns();
+    }
+    return this.constructor._columnsByColumnName;
+  }
+
+  get columnsByAttributeName() {
+    if (!this.constructor._columnsByAttributeName) {
+      this._buildColumns();
+    }
+    return this.constructor._columnsByAttributeName;
+  }
+
+  updateFromDatabaseAttributes(attributes, db) {
+    this._updateFromDatabaseAttributes(attributes, db || this.db);
+  }
+
+  _updateFromDatabaseAttributes(attributes, db) {
+    db = db || this.db;
+
+    checkDatabase(db);
+
     for (const column of this.constructor.columns) {
       const name = '_' + column.name;
       const value = attributes[column.column];
@@ -127,31 +184,44 @@ export default class PersistentObject extends Mixin {
       //   console.warn(format('column %s cannot be null', name));
       // }
 
-      this[name] = this.db.fromDatabase(value, column);
+      this[name] = db.fromDatabase(value, column);
     }
 
     this._rowID = this.toNumber(attributes.id);
   }
 
-  get databaseValues() {
+  attributes() {
+    const values = {};
+
+    for (const column of this.constructor.columns) {
+      const name = column.name;
+
+      values['_' + name] = this['_' + name];
+    }
+
+    return values;
+  }
+
+  databaseValues(db) {
+    db = db || this.db;
+
+    checkDatabase(db);
+
     const values = {};
 
     for (const column of this.constructor.columns) {
       const name = column.name;
       const value = this['_' + name];
 
-      if (value == null && column.null === false) {
-        throw Error(format('column %s cannot be null', name));
-      }
+      // TODO(zhm) this doesn't work with the id attribute
+      // if (value == null && column.null === false) {
+      //   throw Error(format('column %s cannot be null', name));
+      // }
 
-      values[column.column] = this.db.toDatabase(value, column);
+      values[column.column] = db.toDatabase(value, column);
     }
 
     return values;
-  }
-
-  get changes() {
-    return this.databaseValues;
   }
 
   toNumber(integer) {
@@ -172,39 +242,45 @@ export default class PersistentObject extends Mixin {
     return this.rowID > 0;
   }
 
-  async save(opts) {
-    const options = opts || {};
+  async save({db, timestamps, ...rest} = {}) {
+    db = db || this.db;
+
+    checkDatabase(db);
 
     if (this.beforeSave) {
-      await this.beforeSave(options);
+      const result = await this.beforeSave({db, timestamps, ...rest});
+
+      if (result === false) {
+        return this;
+      }
     }
 
-    const values = this.databaseValues;
-
-    if (options.timestamps !== false) {
+    if (timestamps !== false) {
       this.updateTimestamps();
     }
 
-    values.created_at = this.db.toDatabase(this.createdAt, {type: 'datetime'});
-    values.updated_at = this.db.toDatabase(this.updatedAt, {type: 'datetime'});
+    const values = this.databaseValues(db);
+
+    values.created_at = db.toDatabase(this.createdAt, {type: 'datetime'});
+    values.updated_at = db.toDatabase(this.updatedAt, {type: 'datetime'});
 
     if (!this.isPersisted) {
-      this._rowID = await this.db.insert(this.constructor.tableName, values, {pk: 'id'});
+      this._rowID = await db.insert(this.constructor.tableName, values, {pk: 'id'});
     } else {
-      await this.db.update(this.constructor.tableName, {id: this.rowID}, values);
+      await db.update(this.constructor.tableName, {id: this.rowID}, values);
     }
 
     // It's not possible to override `async` methods currently (and be able to use `super`)
     if (this.afterSave) {
-      await this.afterSave(options);
+      await this.afterSave({db, timestamps, ...rest});
     }
 
     return this;
   }
 
-  async delete(opts) {
+  async delete({db}) {
     if (this.isPersisted) {
-      await this.db.delete(this.constructor.tableName, {id: this.rowID});
+      await db.delete(this.constructor.tableName, {id: this.rowID});
 
       this._rowID = null;
       this.createdAt = null;
@@ -214,7 +290,11 @@ export default class PersistentObject extends Mixin {
     return this;
   }
 
-  async loadOne(name, model, id) {
+  async loadOne(name, model, id, db) {
+    db = db || this.db;
+
+    checkDatabase(db);
+
     const ivar = '_' + name;
 
     const pk = id || this[ivar + 'RowID'];
@@ -227,7 +307,7 @@ export default class PersistentObject extends Mixin {
       return this[ivar];
     }
 
-    const instance = await model.findFirst(this.db, {id: pk});
+    const instance = await model.findFirst(db, {id: pk});
 
     this.setOne(name, instance);
 

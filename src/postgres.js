@@ -41,7 +41,7 @@ export default class Postgres extends Database {
     return 'postgresql';
   }
 
-  async each(sql, params, callback) {
+  async _each(sql, params, callback) {
     this.log(sql);
 
     let close = false;
@@ -96,11 +96,11 @@ export default class Postgres extends Database {
     }
   }
 
-  async execute(sql, params) {
+  async _execute(sql, params) {
     let columns = null;
     const rows = [];
 
-    await this.each(sql, [], async (cols, values, index) => {
+    await this._each(sql, [], async (cols, values, index) => {
       if (columns == null) {
         columns = cols;
       }
@@ -176,6 +176,10 @@ export default class Postgres extends Database {
   }
 
   static transaction(options, block) {
+    if (options instanceof Postgres) {
+      return options.transaction(block);
+    }
+
     return new Postgres(options).transaction(block);
   }
 

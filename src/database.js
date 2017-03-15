@@ -1,5 +1,15 @@
 import { format } from 'util';
 import esc from './esc';
+import humanizeDuration from 'humanize-duration';
+
+const shortEnglishHumanizer = humanizeDuration.humanizer({
+  language: 'shortEn',
+  languages: {
+    shortEn: {
+      ms: () => 'ms'
+    }
+  }
+});
 
 export default class Database {
   constructor(options) {
@@ -12,9 +22,36 @@ export default class Database {
   }
 
   log(message) {
-    if (Database.debug) {
-      console.warn('[SQL]', message);
+    // if (Database.debug) {
+    //   console.warn('[SQL]', message);
+    // }
+  }
+
+  static async measure(text, block) {
+    if (!Database.debug) {
+      return await block();
     }
+
+    const start = new Date().getTime();
+
+    let result = null;
+    let error = null;
+
+    try {
+      result = await block();
+    } catch (ex) {
+      error = ex;
+    }
+
+    const total = (new Date().getTime()) - start;
+
+    console.log('[SQL][' + shortEnglishHumanizer(total, {spacer: '', units: [ 'ms' ]}) + ']' + (error ? '[ERROR] ' : ' ') + text);
+
+    if (error) {
+      throw error;
+    }
+
+    return result;
   }
 
   ident(value) {
@@ -34,11 +71,15 @@ export default class Database {
   }
 
   async each(sql, params, callback) {
-    return null;
+    return await Database.measure(sql, async () => {
+      return await this._each(sql, params, callback);
+    });
   }
 
   async execute(sql, params) {
-    return null;
+    return await Database.measure(sql, async () => {
+      return await this._execute(sql, params);
+    });
   }
 
   beginTransaction() {
