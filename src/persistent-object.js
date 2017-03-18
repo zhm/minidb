@@ -278,7 +278,11 @@ export default class PersistentObject extends Mixin {
     return this;
   }
 
-  async delete({db}) {
+  async delete({db} = {}) {
+    db = db || this.db;
+
+    checkDatabase(db);
+
     if (this.isPersisted) {
       await db.delete(this.constructor.tableName, {id: this.rowID});
 

@@ -1,6 +1,6 @@
 {
   "name": "minidb",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Mini ORM",
   "main": "dist/index.js",
   "repository": {
@@ -8,7 +8,7 @@
     "url": "git://github.com/zhm/minidb.git"
   },
   "scripts": {
-    "test": "npm run lint && node_modules/.bin/mocha ./test/setup.js test/sqlite/*.js test/postgres/*.js",
+    "test": "node_modules/.bin/mocha ./test/setup.js test/sqlite/*.js test/postgres/*.js",
     "prepublish": "npm run clean && npm run build",
     "lint": "node_modules/.bin/eslint src",
     "build": "node_modules/.bin/babel src --out-dir dist --source-maps",
@@ -23,6 +23,7 @@
     "bluebird": "^3.5.0",
     "humanize-duration": "^3.10.0",
     "minipg": "^0.1.0",
+    "minisqlite": "^0.0.2",
     "mixmatch": "^0.0.2",
     "pg": "^4.5.6",
     "pg-format": "^1.0.2"
