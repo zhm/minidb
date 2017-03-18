@@ -1,30 +1,17 @@
-import Promise from 'bluebird';
-import sqlite from 'sqlite3';
+import SQLiteConnection from './sqlite-connection';
+import pgformat from 'pg-format';
+import { format } from 'util';
+import esc from './esc';
 import Database from './database';
 
 export default class SQLite extends Database {
-  get dialect() {
-    return 'sqlite';
+  constructor(options) {
+    super(options);
+
+    this.client = options.client;
   }
 
-  async open() {
-    // https://phabricator.babeljs.io/T2765
-    const {file, mode} = this.options;
-
-    const defaultMode = sqlite.OPEN_READWRITE | sqlite.OPEN_CREATE;
-
-    const promise = new Promise((resolve, reject) => {
-      const db = new sqlite.Database(file, mode != null ? mode : defaultMode, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(db);
-        }
-      });
-    });
-
-    this.db = await promise;
-
+  async setup() {
     if (this.options.wal) {
       await this.execute('PRAGMA journal_mode=WAL');
     }
@@ -38,89 +25,300 @@ export default class SQLite extends Database {
     }
   }
 
+  ident(value) {
+    return esc(value, '"');
+  }
+
+  static async connect(db) {
+    return await SQLiteConnection.connect(db);
+  }
+
+  static shutdown() {
+    SQLiteConnection.shutdown();
+  }
+
+  get dialect() {
+    return 'sqlite';
+  }
+
+  async _each(sql, params, callback) {
+    this.log(sql);
+
+    let close = false;
+    let client = this.client;
+    let cursor = null;
+
+    if (client == null) {
+      close = true;
+      client = await SQLite.connect(this.options.db);
+    }
+
+    try {
+      cursor = client.query(sql);
+
+      while (cursor.hasRows) {
+        const result = await cursor.next();
+
+        if (result && callback) {
+          /* eslint-disable callback-return */
+          await callback({columns: result.columns, values: result.values, index: result.index, cursor});
+          /* eslint-enable callback-return */
+        }
+      }
+    } catch (ex) {
+      if (this.verbose) {
+        console.error('ERROR', ex);
+      }
+
+      throw ex;
+    } finally {
+      this._lastInsertID = client.rawClient.lastInsertID;
+
+      if (cursor) {
+        try {
+          await cursor.close();
+        } catch (err) {
+          // Closing the cursor on a connection where there was a previous error rethrows the same error
+          // This is because pumping the cursor to completion ends up carrying the original error to
+          // the end. This is desired behavior, we just have to swallow any potential errors here.
+        }
+      }
+
+      if (close) {
+        await client.close();
+      }
+    }
+  }
+
   async close() {
-    const promise = new Promise((resolve, reject) => {
-      this.db.close((err) => {
-        if (err) {
-          reject(err);
+    if (this.client) {
+      await this.client.close();
+
+      this.client = null;
+    }
+  }
+
+  async _execute(sql, params) {
+    let resultColumns = null;
+    const rows = [];
+
+    await this._each(sql, [], async ({columns, values, index}) => {
+      if (resultColumns == null) {
+        resultColumns = columns;
+      }
+
+      if (values) {
+        rows.push(values);
+      }
+    });
+
+    return { rows: rows, columns: resultColumns };
+  }
+
+  async query(sql, params) {
+    this.log(sql);
+
+    let client = this.client;
+
+    if (client == null) {
+      client = await SQLite.connect(this.options.db);
+    }
+
+    return client.query(sql, params);
+  }
+
+  beginTransaction() {
+    if (this.client == null) {
+      throw new Error('client is null when beginning a transaction');
+    }
+
+    return this.execute('BEGIN TRANSACTION;');
+  }
+
+  commit() {
+    if (this.client == null) {
+      throw new Error('client is null when committing a transaction');
+    }
+
+    return this.execute('COMMIT TRANSACTION;');
+  }
+
+  rollback() {
+    if (this.client == null) {
+      throw new Error('client is null when rolling back a transaction');
+    }
+
+    return this.execute('ROLLBACK TRANSACTION;');
+  }
+
+  async transaction(block) {
+    // get a connection from the pool and make sure it gets used throughout the
+    // transaction block.
+    const client = await SQLite.connect(this.options.db);
+
+    const db = new SQLite(Object.assign({}, this.options, {client: client}));
+
+    await db.beginTransaction();
+
+    try {
+      await block(db);
+      await db.commit();
+    } catch (ex) {
+      try {
+        await db.rollback();
+      } catch (rollbackError) {
+        await db.close();
+        throw rollbackError;
+      }
+
+      throw ex;
+    } finally {
+      await db.close();
+    }
+  }
+
+  static transaction(options, block) {
+    if (options instanceof SQLite) {
+      return options.transaction(block);
+    }
+
+    return new SQLite(options).transaction(block);
+  }
+
+  static async using(options, block) {
+    const connection = await SQLite.connect(options.db);
+
+    const db = new SQLite(Object.assign({}, options, {client: connection}));
+
+    try {
+      await block(db);
+    } finally {
+      await connection.close();
+    }
+  }
+
+  arrayFormatString(array) {
+    if (Number.isInteger(array[0])) {
+      return 'ARRAY[%L]::bigint[]';
+    } else if (typeof array[0] === 'number') {
+      return 'ARRAY[%L]::double precision[]';
+    }
+
+    return 'ARRAY[%L]';
+  }
+
+  buildWhere(where) {
+    const clause = [];
+
+    if (where) {
+      for (const key of Object.keys(where)) {
+        if (Array.isArray(where[key])) {
+          clause.push(pgformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, where[key]));
         } else {
-          resolve();
+          clause.push(pgformat('%I = %L', key, where[key]));
         }
-      });
-    });
+      }
+    }
 
-    await promise;
-
-    this.db = null;
+    return [ clause, [] ];
   }
 
-  each(sql, params, callback) {
-    return new Promise((resolve, reject) => {
-      let index = -1;
-      let columns = null;
+  buildInsert(attributes, includeNames = true) {
+    const names = [];
+    const values = [];
+    const placeholders = [];
 
-      const cb = (err, row) => {
-        if (err) {
-          return reject(err);
-        }
-
-        ++index;
-
-        if (columns == null) {
-          columns = Object.keys(row);
-        }
-
-        return callback(columns, row, index);
-      };
-
-      const complete = (err) => {
-        if (err) {
-          return reject(err);
-        }
-
-        return resolve(null);
-      };
-
-      const args = [ sql ].concat(params).concat(cb, complete);
-
-      if (this.verbose) {
-        console.log(sql, params);
+    // Use the literal values instead of placeholders  because parameterized
+    // queries require prepared statements. Prepared statements are stateful
+    // and impose requirements on the connection that are incompatible with
+    // pgbouncer.
+    for (const key of Object.keys(attributes)) {
+      if (includeNames) {
+        names.push(pgformat('%I', key));
       }
 
-      this.db.each.apply(this.db, args);
-    });
+      const value = attributes[key];
+
+      if (Array.isArray(value)) {
+        placeholders.push(pgformat('ARRAY[%L]', value));
+      } else if (value && value.raw) {
+        placeholders.push(pgformat('%s', value.raw));
+      } else {
+        placeholders.push(pgformat('%L', value));
+      }
+    }
+
+    return [ names, placeholders, values ];
   }
 
-  async execute(sql, options) {
-    const params = options || [];
+  buildUpdate(attributes) {
+    const sets = [];
+    const values = [];
 
-    return new Promise((resolve, reject) => {
-      if (this.verbose) {
-        console.log(sql, params);
+    for (const key of Object.keys(attributes)) {
+      const value = attributes[key];
+
+      if (Array.isArray(value)) {
+        sets.push(pgformat('%I = ARRAY[%L]', key, value));
+      } else if (value && value.raw) {
+        sets.push(pgformat('%I = %s', value.raw));
+      } else {
+        sets.push(pgformat('%I = %L', key, value));
+      }
+    }
+
+    return [ sets, values ];
+  }
+
+  insertStatement(table, attributes, options) {
+    // if (options == null) {
+    //   throw new Error('options not given');
+    // }
+
+    const [ names, placeholders, values ] = this.buildInsert(attributes);
+
+    const returning = '';
+
+    const sql = format('INSERT INTO %s (%s)\nVALUES (%s)%s;',
+                       table,
+                       names.join(', '),
+                       placeholders.join(', '),
+                       returning);
+
+    return {sql, values};
+  }
+
+  insertStatements(table, arrayOfAttributes, options) {
+    const arrayOfValues = [];
+
+    let names = null;
+
+    for (const attributes of arrayOfAttributes) {
+      const insert = this.buildInsert(attributes, names == null);
+
+      if (names == null) {
+        names = insert[0];
       }
 
-      /* eslint-disable consistent-this */
-      const self = this;
-      /* eslint-enable consistent-this */
+      arrayOfValues.push('(' + insert[1].join(', ') + ')');
+    }
 
-      this.db.run(sql, params, function handler(err) {
-        if (err) {
-          self.lastID = null;
-          self.changes = null;
+    const sql = format('INSERT INTO %s (%s)\nVALUES %s;',
+                       table,
+                       names.join(', '),
+                       arrayOfValues.join(',\n'));
 
-          if (self.verbose) {
-            console.error('ERROR', err);
-          }
+    return {sql, values: {}};
+  }
 
-          return reject(err);
-        }
+  async insert(table, attributes, options) {
+    const statement = this.insertStatement(table, attributes, options);
 
-        self.lastID = this.lastID;
-        self.changes = this.changes;
+    const result = await this.all(statement.sql, statement.values);
 
-        return resolve(null);
-      });
-    });
+    // TODO(zhm) broken
+    return this._lastInsertID;
+    // return +result[0].id;
   }
 
   toDatabase(value, column) {
@@ -130,7 +328,7 @@ export default class SQLite extends Database {
 
     switch (column.type) {
       case 'datetime':
-        return value.getTime();
+        return value.toISOString();
 
       default:
         return super.toDatabase(value, column);
@@ -144,10 +342,11 @@ export default class SQLite extends Database {
 
     switch (column.type) {
       case 'datetime':
-        return new Date(+value);
+        return new Date(value);
 
       default:
         return super.fromDatabase(value, column);
     }
   }
 }
+

@@ -1,9 +1,8 @@
-import pg from 'pg';
-
-export default class PostgresCursor {
-  constructor(connection, rawCursor) {
+export default class DatabaseCursor {
+  constructor(connection, rawCursor, converter) {
     this._connection = connection;
     this._rawCursor = rawCursor;
+    this._converter = converter;
     this._finished = false;
   }
 
@@ -19,12 +18,13 @@ export default class PostgresCursor {
 
       for (let i = 0; i < columns.length; ++i) {
         let value = values[i];
+        const column = columns[i];
 
-        if (value != null) {
-          value = pg.types.getTypeParser(columns[i].type)(value);
+        if (value != null && this._converter) {
+          value = this._converter({column, value});
         }
 
-        parsedValues[columns[i].name] = value;
+        parsedValues[column.name] = value;
       }
     }
 
@@ -37,7 +37,7 @@ export default class PostgresCursor {
 
   async next() {
     return new Promise((resolve, reject) => {
-      this._rawCursor.next((err, finished, columns, values, index) => {
+      this._rawCursor.next((err, {finished, columns, values, index, client}) => {
         this._finished = finished;
 
         if (err) {
@@ -48,7 +48,8 @@ export default class PostgresCursor {
 
         return resolve({columns: columns,
                         values: columns && this.parseValues(columns, values),
-                        index: index});
+                        index: index,
+                        client});
       });
     });
   }

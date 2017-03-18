@@ -61,7 +61,7 @@ export default class Postgres extends Database {
 
         if (result && callback) {
           /* eslint-disable callback-return */
-          await callback(result.columns, result.values, result.index);
+          await callback({columns: result.columns, values: result.values, index: result.index, cursor});
           /* eslint-enable callback-return */
         }
       }
@@ -97,12 +97,12 @@ export default class Postgres extends Database {
   }
 
   async _execute(sql, params) {
-    let columns = null;
+    let resultColumns = null;
     const rows = [];
 
-    await this._each(sql, [], async (cols, values, index) => {
-      if (columns == null) {
-        columns = cols;
+    await this._each(sql, [], async ({columns, values, index, cursor}) => {
+      if (resultColumns == null) {
+        resultColumns = columns;
       }
 
       if (values) {
@@ -110,7 +110,7 @@ export default class Postgres extends Database {
       }
     });
 
-    return { rows: rows, columns: columns };
+    return { rows: rows, columns: resultColumns };
   }
 
   async query(sql, params) {

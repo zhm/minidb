@@ -94,7 +94,7 @@ class Postgres extends _database2.default {
 
           if (result && callback) {
             /* eslint-disable callback-return */
-            yield callback(result.columns, result.values, result.index);
+            yield callback({ columns: result.columns, values: result.values, index: result.index, cursor: cursor });
             /* eslint-enable callback-return */
           }
         }
@@ -138,13 +138,18 @@ class Postgres extends _database2.default {
     var _this3 = this;
 
     return _asyncToGenerator(function* () {
-      let columns = null;
+      let resultColumns = null;
       const rows = [];
 
       yield _this3._each(sql, [], (() => {
-        var _ref = _asyncToGenerator(function* (cols, values, index) {
-          if (columns == null) {
-            columns = cols;
+        var _ref = _asyncToGenerator(function* (_ref2) {
+          let columns = _ref2.columns,
+              values = _ref2.values,
+              index = _ref2.index,
+              cursor = _ref2.cursor;
+
+          if (resultColumns == null) {
+            resultColumns = columns;
           }
 
           if (values) {
@@ -152,12 +157,12 @@ class Postgres extends _database2.default {
           }
         });
 
-        return function (_x, _x2, _x3) {
+        return function (_x) {
           return _ref.apply(this, arguments);
         };
       })());
 
-      return { rows: rows, columns: columns };
+      return { rows: rows, columns: resultColumns };
     })();
   }
 

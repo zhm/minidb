@@ -110,9 +110,9 @@ export default class Database {
   async all(sql, params) {
     const rows = [];
 
-    await this.each(sql, params, (columns, row, index) => {
-      if (row) {
-        rows.push(row);
+    await this.each(sql, params, ({columns, values, index, cursor}) => {
+      if (values) {
+        rows.push(values);
       }
     });
 
@@ -122,9 +122,9 @@ export default class Database {
   async get(sql, params) {
     const rows = [];
 
-    await this.each(sql, params, (columns, row, index) => {
-      if (row) {
-        rows.push(row);
+    await this.each(sql, params, ({columns, values, index, cursor}) => {
+      if (values) {
+        rows.push(values);
       }
     });
 

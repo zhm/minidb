@@ -149,9 +149,14 @@ class Database {
     return _asyncToGenerator(function* () {
       const rows = [];
 
-      yield _this4.each(sql, params, function (columns, row, index) {
-        if (row) {
-          rows.push(row);
+      yield _this4.each(sql, params, function (_ref3) {
+        let columns = _ref3.columns,
+            values = _ref3.values,
+            index = _ref3.index,
+            cursor = _ref3.cursor;
+
+        if (values) {
+          rows.push(values);
         }
       });
 
@@ -165,9 +170,14 @@ class Database {
     return _asyncToGenerator(function* () {
       const rows = [];
 
-      yield _this5.each(sql, params, function (columns, row, index) {
-        if (row) {
-          rows.push(row);
+      yield _this5.each(sql, params, function (_ref4) {
+        let columns = _ref4.columns,
+            values = _ref4.values,
+            index = _ref4.index,
+            cursor = _ref4.cursor;
+
+        if (values) {
+          rows.push(values);
         }
       });
 

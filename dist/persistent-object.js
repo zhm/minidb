@@ -333,11 +333,17 @@ class PersistentObject extends _mixmatch2.default {
     })();
   }
 
-  delete(_ref3) {
+  delete() {
     var _this2 = this;
+
+    var _ref3 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
     let db = _ref3.db;
     return _asyncToGenerator(function* () {
+      db = db || _this2.db;
+
+      checkDatabase(db);
+
       if (_this2.isPersisted) {
         yield db.delete(_this2.constructor.tableName, { id: _this2.rowID });
 

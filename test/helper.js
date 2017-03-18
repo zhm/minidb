@@ -8,6 +8,7 @@ function mochaAsync(test) {
       await test();
       done();
     } catch (err) {
+      console.log('ERR', err);
       done(err);
     }
   };

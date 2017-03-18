@@ -1187,13 +1187,9 @@ generate-object-property@^1.1.0:
   dependencies:
     is-property "^1.0.0"
 
-generic-pool@2.4.2:
+generic-pool@2.4.2, generic-pool@^2.4.2:
   version "2.4.2"
   resolved "https://registry.yarnpkg.com/generic-pool/-/generic-pool-2.4.2.tgz#886bc5bf0beb7db96e81bcbba078818de5a62683"
-
-generic-pool@^2.4.2:
-  version "2.5.4"
-  resolved "https://registry.yarnpkg.com/generic-pool/-/generic-pool-2.5.4.tgz#38c6188513e14030948ec6e5cf65523d9779299b"
 
 getpass@^0.1.1:
   version "0.1.6"
@@ -1640,18 +1636,18 @@ minimist@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.0.tgz#a35008b20f41383eec1fb914f4cd5df79a264284"
 
-minipg@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/minipg/-/minipg-0.1.0.tgz#3060a2879a0afef6c906c59795c25e6c51a5d297"
+minipg@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/minipg/-/minipg-0.2.2.tgz#76276a9d9406fd3754c58ab853baf854e923d128"
   dependencies:
     bindings "^1.2.1"
     generic-pool "^2.4.2"
     nan "^2.3.3"
     node-gyp "^3.3.1"
 
-minisqlite@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/minisqlite/-/minisqlite-0.0.2.tgz#268ab716f48f022e085ff1ec14b522e4113fb479"
+minisqlite@^0.0.5:
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/minisqlite/-/minisqlite-0.0.5.tgz#0a2fac5a4c11d421def525625e0c381d1e3d004c"
   dependencies:
     bindings "^1.2.1"
     eslint-plugin-babel "^4.1.1"
@@ -1702,11 +1698,7 @@ mute-stream@0.0.5:
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.5.tgz#8fbfabb0a98a253d3184331f9e8deb7372fac6c0"
 
-nan@^2.3.0, nan@^2.3.3:
-  version "2.5.1"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.5.1.tgz#d5b01691253326a97a2bbee9e61c55d8d60351e2"
-
-nan@~2.4.0:
+nan@^2.3.0, nan@^2.3.3, nan@~2.4.0:
   version "2.4.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.4.0.tgz#fb3c59d45fe4effe215f0b890f8adf6eb32d2232"
 

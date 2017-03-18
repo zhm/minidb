@@ -13,7 +13,7 @@ describe('sqlite', () => {
     try {
       const file = ':memory:';
 
-      const db = new SQLite({file: file});
+      const db = new SQLite({db: file});
 
       await db.open();
       await db.execute('DROP TABLE IF EXISTS test_table');
