@@ -5,6 +5,48 @@ import Database from './database';
 import DatabaseCursor from './database-cursor';
 import { Client } from 'minisqlite';
 
+function quoteLiteral(value) {
+  let stringValue = null;
+
+  if (value == null) {
+    return 'NULL';
+  } else if (value === false) {
+    return '0';
+  } else if (value === true) {
+    return '1';
+  } else if (value instanceof Date) {
+    return value.getTime().toString();
+  } else if (typeof value === 'number') {
+    return value.toString();
+  } else if (typeof value === 'string') {
+    stringValue = value;
+  } else {
+    stringValue = JSON.stringify(value);
+  }
+
+  let result = "'";
+
+  if (stringValue.indexOf("'") !== -1) {
+    const length = stringValue.length;
+
+    for (let i = 0; i < length; i++) {
+      const char = stringValue[i];
+
+      if (char === "'") {
+        result += "'";
+      }
+
+      result += char;
+    }
+  } else {
+    result += stringValue;
+  }
+
+  result += "'";
+
+  return result;
+}
+
 export default class SQLite extends Database {
   async createClient({file}) {
     return new Promise((resolve, reject) => {
@@ -161,7 +203,7 @@ export default class SQLite extends Database {
         if (Array.isArray(where[key])) {
           clause.push(pgformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, where[key]));
         } else {
-          clause.push(pgformat('%I = %L', key, where[key]));
+          clause.push(pgformat('%I = %s', key, quoteLiteral(where[key])));
         }
       }
     }
@@ -185,12 +227,10 @@ export default class SQLite extends Database {
 
       const value = attributes[key];
 
-      if (Array.isArray(value)) {
-        placeholders.push(pgformat('ARRAY[%L]', value));
-      } else if (value && value.raw) {
+      if (value && value.raw) {
         placeholders.push(pgformat('%s', value.raw));
       } else {
-        placeholders.push(pgformat('%L', value));
+        placeholders.push(quoteLiteral(value));
       }
     }
 
@@ -204,12 +244,10 @@ export default class SQLite extends Database {
     for (const key of Object.keys(attributes)) {
       const value = attributes[key];
 
-      if (Array.isArray(value)) {
-        sets.push(pgformat('%I = ARRAY[%L]', key, value));
-      } else if (value && value.raw) {
-        sets.push(pgformat('%I = %s', value.raw));
+      if (value && value.raw) {
+        sets.push(pgformat('%I = %s', key, value.raw));
       } else {
-        sets.push(pgformat('%I = %L', key, value));
+        sets.push(pgformat('%I = %s', key, quoteLiteral(value)));
       }
     }
 
