@@ -14,7 +14,7 @@ export default class DatabaseConnection {
     // implement
   }
 
-  static async connect(connectionString) {
+  static async connect(options) {
     // implement
   }
 
@@ -27,9 +27,9 @@ export default class DatabaseConnection {
     this.rawClient = null;
   }
 
-  static async _connect(ConnectionClass, connectionString) {
+  static async _connect(ConnectionClass, options) {
     return new Promise((resolve, reject) => {
-      const pool = ConnectionClass.pool(connectionString);
+      const pool = ConnectionClass.pool(options.db);
 
       pool.acquire((err, client) => {
         if (err) {

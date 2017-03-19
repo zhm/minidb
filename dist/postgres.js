@@ -83,7 +83,7 @@ class Postgres extends _database2.default {
 
       if (client == null) {
         close = true;
-        client = yield Postgres.connect(_this.options.db);
+        client = yield Postgres.connect(_this.options);
       }
 
       try {
@@ -196,7 +196,7 @@ class Postgres extends _database2.default {
     return _asyncToGenerator(function* () {
       // get a connection from the pool and make sure it gets used throughout the
       // transaction block.
-      const client = yield Postgres.connect(_this4.options.db);
+      const client = yield Postgres.connect(_this4.options);
 
       const db = new Postgres(Object.assign({}, _this4.options, { client: client }));
 
@@ -230,7 +230,7 @@ class Postgres extends _database2.default {
 
   static using(options, block) {
     return _asyncToGenerator(function* () {
-      const connection = yield Postgres.connect(options.db);
+      const connection = yield Postgres.connect(options);
 
       const db = new Postgres(Object.assign({}, options, { client: connection }));
 

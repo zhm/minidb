@@ -50,7 +50,7 @@ export default class Postgres extends Database {
 
     if (client == null) {
       close = true;
-      client = await Postgres.connect(this.options.db);
+      client = await Postgres.connect(this.options);
     }
 
     try {
@@ -140,7 +140,7 @@ export default class Postgres extends Database {
   async transaction(block) {
     // get a connection from the pool and make sure it gets used throughout the
     // transaction block.
-    const client = await Postgres.connect(this.options.db);
+    const client = await Postgres.connect(this.options);
 
     const db = new Postgres(Object.assign({}, this.options, {client: client}));
 
@@ -172,7 +172,7 @@ export default class Postgres extends Database {
   }
 
   static async using(options, block) {
-    const connection = await Postgres.connect(options.db);
+    const connection = await Postgres.connect(options);
 
     const db = new Postgres(Object.assign({}, options, {client: connection}));
 

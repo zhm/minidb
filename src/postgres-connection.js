@@ -8,8 +8,8 @@ export default class PostgresConnection extends DatabaseConnection {
     return this._pool(createPool, connectionString);
   }
 
-  static async connect(connectionString) {
-    return this._connect(PostgresConnection, connectionString);
+  static async connect(options) {
+    return this._connect(PostgresConnection, options);
   }
 
   query(...args) {

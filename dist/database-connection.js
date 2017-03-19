@@ -22,7 +22,7 @@ class DatabaseConnection {
     // implement
   }
 
-  static connect(connectionString) {
+  static connect(options) {
     // implement
 
     return _asyncToGenerator(function* () {})();
@@ -37,10 +37,10 @@ class DatabaseConnection {
     this.rawClient = null;
   }
 
-  static _connect(ConnectionClass, connectionString) {
+  static _connect(ConnectionClass, options) {
     return _asyncToGenerator(function* () {
       return new Promise(function (resolve, reject) {
-        const pool = ConnectionClass.pool(connectionString);
+        const pool = ConnectionClass.pool(options.db);
 
         pool.acquire(function (err, client) {
           if (err) {

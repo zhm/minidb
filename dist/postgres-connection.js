@@ -27,11 +27,11 @@ class PostgresConnection extends _databaseConnection2.default {
     return this._pool(_minipg.createPool, connectionString);
   }
 
-  static connect(connectionString) {
+  static connect(options) {
     var _this = this;
 
     return _asyncToGenerator(function* () {
-      return _this._connect(PostgresConnection, connectionString);
+      return _this._connect(PostgresConnection, options);
     })();
   }
 
