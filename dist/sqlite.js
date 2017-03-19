@@ -6,10 +6,6 @@ Object.defineProperty(exports, "__esModule", {
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-var _sqliteConnection = require('./sqlite-connection');
-
-var _sqliteConnection2 = _interopRequireDefault(_sqliteConnection);
-
 var _pgFormat = require('pg-format');
 
 var _pgFormat2 = _interopRequireDefault(_pgFormat);
@@ -24,23 +20,40 @@ var _database = require('./database');
 
 var _database2 = _interopRequireDefault(_database);
 
+var _databaseCursor = require('./database-cursor');
+
+var _databaseCursor2 = _interopRequireDefault(_databaseCursor);
+
+var _minisqlite = require('minisqlite');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-// import { Client } from 'minisqlite';
-
 
 class SQLite extends _database2.default {
-  constructor(options) {
-    super(options);
+  createClient(_ref) {
+    let file = _ref.file;
+    return _asyncToGenerator(function* () {
+      return new Promise(function (resolve, reject) {
+        new _minisqlite.Client().connect(file, null, null, function (err, client) {
+          if (err) {
+            return reject(client ? client.lastError : err);
+          }
 
-    this.client = options.client;
+          return resolve(client);
+        });
+      });
+    })();
   }
 
   setup() {
     var _this = this;
 
     return _asyncToGenerator(function* () {
+      if (!_this.client) {
+        _this.client = yield _this.createClient(_this.options);
+      }
+
       if (_this.options.wal) {
         yield _this.execute('PRAGMA journal_mode=WAL');
       }
@@ -59,14 +72,12 @@ class SQLite extends _database2.default {
     return (0, _esc2.default)(value, '"');
   }
 
-  static connect(db) {
+  static open(options) {
     return _asyncToGenerator(function* () {
-      return yield _sqliteConnection2.default.connect(db);
+      const db = new SQLite(options);
+      yield db.setup();
+      return db;
     })();
-  }
-
-  static shutdown() {
-    _sqliteConnection2.default.shutdown();
   }
 
   get dialect() {
@@ -79,20 +90,12 @@ class SQLite extends _database2.default {
     return _asyncToGenerator(function* () {
       _this2.log(sql);
 
-      let close = false;
-      let client = _this2.client;
+      const close = false;
+      const client = _this2.client;
       let cursor = null;
 
-      if (client == null) {
-        close = true;
-        client = yield SQLite.connect(_this2.options.db);
-      }
-
-      let index = 0;
-
       try {
-        console.log('RUN', sql);
-        cursor = client.query(sql);
+        cursor = _this2.query(sql);
 
         while (cursor.hasRows) {
           const result = yield cursor.next();
@@ -110,7 +113,7 @@ class SQLite extends _database2.default {
 
         throw ex;
       } finally {
-        _this2._lastInsertID = client.rawClient.lastInsertID;
+        _this2._lastInsertID = client.lastInsertID;
 
         if (cursor) {
           try {
@@ -149,10 +152,10 @@ class SQLite extends _database2.default {
       const rows = [];
 
       yield _this4._each(sql, [], (() => {
-        var _ref = _asyncToGenerator(function* (_ref2) {
-          let columns = _ref2.columns,
-              values = _ref2.values,
-              index = _ref2.index;
+        var _ref2 = _asyncToGenerator(function* (_ref3) {
+          let columns = _ref3.columns,
+              values = _ref3.values,
+              index = _ref3.index;
 
           if (resultColumns == null) {
             resultColumns = columns;
@@ -164,7 +167,7 @@ class SQLite extends _database2.default {
         });
 
         return function (_x) {
-          return _ref.apply(this, arguments);
+          return _ref2.apply(this, arguments);
         };
       })());
 
@@ -172,94 +175,30 @@ class SQLite extends _database2.default {
     })();
   }
 
-  query(sql, params) {
-    var _this5 = this;
-
-    return _asyncToGenerator(function* () {
-      _this5.log(sql);
-
-      let client = _this5.client;
-
-      if (client == null) {
-        client = yield SQLite.connect(_this5.options.db);
-      }
-
-      return client.query(sql, params);
-    })();
-  }
-
-  beginTransaction() {
-    if (this.client == null) {
-      throw new Error('client is null when beginning a transaction');
-    }
-
-    return this.execute('BEGIN TRANSACTION;');
-  }
-
-  commit() {
-    if (this.client == null) {
-      throw new Error('client is null when committing a transaction');
-    }
-
-    return this.execute('COMMIT TRANSACTION;');
-  }
-
-  rollback() {
-    if (this.client == null) {
-      throw new Error('client is null when rolling back a transaction');
-    }
-
-    return this.execute('ROLLBACK TRANSACTION;');
+  query() {
+    return new _databaseCursor2.default(this, this.client.query(...arguments));
   }
 
   transaction(block) {
-    var _this6 = this;
+    var _this5 = this;
 
     return _asyncToGenerator(function* () {
-      // get a connection from the pool and make sure it gets used throughout the
-      // transaction block.
-      const client = yield SQLite.connect(_this6.options.db);
-
-      const db = new SQLite(Object.assign({}, _this6.options, { client: client }));
-
-      yield db.beginTransaction();
+      yield _this5.beginTransaction();
 
       try {
-        yield block(db);
-        yield db.commit();
+        yield block(_this5);
+        yield _this5.commit();
       } catch (ex) {
         try {
-          yield db.rollback();
+          yield _this5.rollback();
         } catch (rollbackError) {
-          yield db.close();
+          yield _this5.close();
           throw rollbackError;
         }
 
         throw ex;
       } finally {
-        yield db.close();
-      }
-    })();
-  }
-
-  static transaction(options, block) {
-    if (options instanceof SQLite) {
-      return options.transaction(block);
-    }
-
-    return new SQLite(options).transaction(block);
-  }
-
-  static using(options, block) {
-    return _asyncToGenerator(function* () {
-      const connection = yield SQLite.connect(options.db);
-
-      const db = new SQLite(Object.assign({}, options, { client: connection }));
-
-      try {
-        yield block(db);
-      } finally {
-        yield connection.close();
+        yield _this5.close();
       }
     })();
   }
@@ -340,9 +279,9 @@ class SQLite extends _database2.default {
   }
 
   insertStatement(table, attributes, options) {
-    if (options == null || options.pk == null) {
-      throw new Error('pk is required');
-    }
+    // if (options == null) {
+    //   throw new Error('options not given');
+    // }
 
     var _buildInsert = this.buildInsert(attributes),
         _buildInsert2 = _slicedToArray(_buildInsert, 3);
@@ -380,15 +319,15 @@ class SQLite extends _database2.default {
   }
 
   insert(table, attributes, options) {
-    var _this7 = this;
+    var _this6 = this;
 
     return _asyncToGenerator(function* () {
-      const statement = _this7.insertStatement(table, attributes, options);
+      const statement = _this6.insertStatement(table, attributes, options);
 
-      const result = yield _this7.all(statement.sql, statement.values);
+      const result = yield _this6.all(statement.sql, statement.values);
 
       // TODO(zhm) broken
-      return _this7._lastInsertID;
+      return _this6._lastInsertID;
       // return +result[0].id;
     })();
   }

@@ -10,6 +10,7 @@ class DatabaseCursor {
   constructor(connection, rawCursor, converter) {
     this._connection = connection;
     this._rawCursor = rawCursor;
+    this._converter = converter;
     this._finished = false;
   }
 
@@ -27,8 +28,8 @@ class DatabaseCursor {
         let value = values[i];
         const column = columns[i];
 
-        if (value != null && this.converter) {
-          value = this.converter({ column: column, value: value });
+        if (value != null && this._converter) {
+          value = this._converter({ column: column, value: value });
         }
 
         parsedValues[column.name] = value;
