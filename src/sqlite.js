@@ -1,17 +1,28 @@
-import SQLiteConnection from './sqlite-connection';
 import pgformat from 'pg-format';
 import { format } from 'util';
 import esc from './esc';
 import Database from './database';
+import DatabaseCursor from './database-cursor';
+import { Client } from 'minisqlite';
 
 export default class SQLite extends Database {
-  constructor(options) {
-    super(options);
+  async createClient({file}) {
+    return new Promise((resolve, reject) => {
+      new Client().connect(file, null, null, (err, client) => {
+        if (err) {
+          return reject(client ? client.lastError : err);
+        }
 
-    this.client = options.client;
+        return resolve(client);
+      });
+    });
   }
 
   async setup() {
+    if (!this.client) {
+      this.client = await this.createClient(this.options);
+    }
+
     if (this.options.wal) {
       await this.execute('PRAGMA journal_mode=WAL');
     }
@@ -29,12 +40,10 @@ export default class SQLite extends Database {
     return esc(value, '"');
   }
 
-  static async connect(db) {
-    return await SQLiteConnection.connect(db);
-  }
-
-  static shutdown() {
-    SQLiteConnection.shutdown();
+  static async open(options) {
+    const db = new SQLite(options);
+    await db.setup();
+    return db;
   }
 
   get dialect() {
@@ -44,17 +53,12 @@ export default class SQLite extends Database {
   async _each(sql, params, callback) {
     this.log(sql);
 
-    let close = false;
-    let client = this.client;
+    const close = false;
+    const client = this.client;
     let cursor = null;
 
-    if (client == null) {
-      close = true;
-      client = await SQLite.connect(this.options.db);
-    }
-
     try {
-      cursor = client.query(sql);
+      cursor = this.query(sql);
 
       while (cursor.hasRows) {
         const result = await cursor.next();
@@ -72,7 +76,7 @@ export default class SQLite extends Database {
 
       throw ex;
     } finally {
-      this._lastInsertID = client.rawClient.lastInsertID;
+      this._lastInsertID = client.lastInsertID;
 
       if (cursor) {
         try {
@@ -115,85 +119,27 @@ export default class SQLite extends Database {
     return { rows: rows, columns: resultColumns };
   }
 
-  async query(sql, params) {
-    this.log(sql);
-
-    let client = this.client;
-
-    if (client == null) {
-      client = await SQLite.connect(this.options.db);
-    }
-
-    return client.query(sql, params);
-  }
-
-  beginTransaction() {
-    if (this.client == null) {
-      throw new Error('client is null when beginning a transaction');
-    }
-
-    return this.execute('BEGIN TRANSACTION;');
-  }
-
-  commit() {
-    if (this.client == null) {
-      throw new Error('client is null when committing a transaction');
-    }
-
-    return this.execute('COMMIT TRANSACTION;');
-  }
-
-  rollback() {
-    if (this.client == null) {
-      throw new Error('client is null when rolling back a transaction');
-    }
-
-    return this.execute('ROLLBACK TRANSACTION;');
+  query(...args) {
+    return new DatabaseCursor(this, this.client.query(...args));
   }
 
   async transaction(block) {
-    // get a connection from the pool and make sure it gets used throughout the
-    // transaction block.
-    const client = await SQLite.connect(this.options.db);
-
-    const db = new SQLite(Object.assign({}, this.options, {client: client}));
-
-    await db.beginTransaction();
+    await this.beginTransaction();
 
     try {
-      await block(db);
-      await db.commit();
+      await block(this);
+      await this.commit();
     } catch (ex) {
       try {
-        await db.rollback();
+        await this.rollback();
       } catch (rollbackError) {
-        await db.close();
+        await this.close();
         throw rollbackError;
       }
 
       throw ex;
     } finally {
-      await db.close();
-    }
-  }
-
-  static transaction(options, block) {
-    if (options instanceof SQLite) {
-      return options.transaction(block);
-    }
-
-    return new SQLite(options).transaction(block);
-  }
-
-  static async using(options, block) {
-    const connection = await SQLite.connect(options.db);
-
-    const db = new SQLite(Object.assign({}, options, {client: connection}));
-
-    try {
-      await block(db);
-    } finally {
-      await connection.close();
+      await this.close();
     }
   }
 

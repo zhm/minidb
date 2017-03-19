@@ -2,3 +2,4 @@ node_modules/
 docs/output
 npm-debug.log
 test/sqlite/test.db
+test/sqlite/test-sqlite.db

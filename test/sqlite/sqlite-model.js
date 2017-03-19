@@ -34,7 +34,13 @@ async function setup(done) {
 
     rimraf.sync(file);
 
-    context.db = new SQLite({db: 'test.db'});
+    const options = {
+      file: file,
+      wal: true,
+      autoVacuum: true
+    };
+
+    context.db = await SQLite.open(options);
 
     for (const sql of script.split(';')) {
       if (sql.trim().length) {

@@ -113,18 +113,6 @@ export default class Postgres extends Database {
     return { rows: rows, columns: resultColumns };
   }
 
-  async query(sql, params) {
-    this.log(sql);
-
-    let client = this.client;
-
-    if (client == null) {
-      client = await Postgres.connect(this.options.db);
-    }
-
-    return client.query(sql, params);
-  }
-
   beginTransaction() {
     if (this.client == null) {
       throw new Error('client is null when beginning a transaction');

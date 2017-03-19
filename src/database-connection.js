@@ -1,6 +1,3 @@
-// import { createPool } from 'minipg';
-// import PostgresCursor from './postgres-cursor';
-
 const POOLS = {};
 
 // Wrap a single connection w/ a query method in an async function.
