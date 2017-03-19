@@ -30,6 +30,48 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
+function quoteLiteral(value) {
+  let stringValue = null;
+
+  if (value == null) {
+    return 'NULL';
+  } else if (value === false) {
+    return '0';
+  } else if (value === true) {
+    return '1';
+  } else if (value instanceof Date) {
+    return value.getTime().toString();
+  } else if (typeof value === 'number') {
+    return value.toString();
+  } else if (typeof value === 'string') {
+    stringValue = value;
+  } else {
+    stringValue = JSON.stringify(value);
+  }
+
+  let result = "'";
+
+  if (stringValue.indexOf("'") !== -1) {
+    const length = stringValue.length;
+
+    for (let i = 0; i < length; i++) {
+      const char = stringValue[i];
+
+      if (char === "'") {
+        result += "'";
+      }
+
+      result += char;
+    }
+  } else {
+    result += stringValue;
+  }
+
+  result += "'";
+
+  return result;
+}
+
 class SQLite extends _database2.default {
   createClient(_ref) {
     let file = _ref.file;
@@ -221,7 +263,7 @@ class SQLite extends _database2.default {
         if (Array.isArray(where[key])) {
           clause.push((0, _pgFormat2.default)('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, where[key]));
         } else {
-          clause.push((0, _pgFormat2.default)('%I = %L', key, where[key]));
+          clause.push((0, _pgFormat2.default)('%I = %s', key, quoteLiteral(where[key])));
         }
       }
     }
@@ -247,12 +289,10 @@ class SQLite extends _database2.default {
 
       const value = attributes[key];
 
-      if (Array.isArray(value)) {
-        placeholders.push((0, _pgFormat2.default)('ARRAY[%L]', value));
-      } else if (value && value.raw) {
+      if (value && value.raw) {
         placeholders.push((0, _pgFormat2.default)('%s', value.raw));
       } else {
-        placeholders.push((0, _pgFormat2.default)('%L', value));
+        placeholders.push(quoteLiteral(value));
       }
     }
 
@@ -266,12 +306,10 @@ class SQLite extends _database2.default {
     for (const key of Object.keys(attributes)) {
       const value = attributes[key];
 
-      if (Array.isArray(value)) {
-        sets.push((0, _pgFormat2.default)('%I = ARRAY[%L]', key, value));
-      } else if (value && value.raw) {
-        sets.push((0, _pgFormat2.default)('%I = %s', value.raw));
+      if (value && value.raw) {
+        sets.push((0, _pgFormat2.default)('%I = %s', key, value.raw));
       } else {
-        sets.push((0, _pgFormat2.default)('%I = %L', key, value));
+        sets.push((0, _pgFormat2.default)('%I = %s', key, quoteLiteral(value)));
       }
     }
 
