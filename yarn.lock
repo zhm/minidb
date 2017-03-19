@@ -1636,18 +1636,18 @@ minimist@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.0.tgz#a35008b20f41383eec1fb914f4cd5df79a264284"
 
-minipg@^0.2.2:
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/minipg/-/minipg-0.2.2.tgz#76276a9d9406fd3754c58ab853baf854e923d128"
+minipg@^0.2.3:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/minipg/-/minipg-0.2.3.tgz#d0eb1a21f9b228e53f173c98a2b12f4151e24e81"
   dependencies:
     bindings "^1.2.1"
     generic-pool "^2.4.2"
     nan "^2.3.3"
     node-gyp "^3.3.1"
 
-minisqlite@^0.0.5:
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/minisqlite/-/minisqlite-0.0.5.tgz#0a2fac5a4c11d421def525625e0c381d1e3d004c"
+minisqlite@^0.0.6:
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/minisqlite/-/minisqlite-0.0.6.tgz#1e6f3a432d3d5d555489c7d2aa96fb20d298bc52"
   dependencies:
     bindings "^1.2.1"
     eslint-plugin-babel "^4.1.1"
