@@ -17,7 +17,7 @@ function quoteLiteral(value) {
   } else if (value instanceof Date) {
     return value.getTime().toString();
   } else if (typeof value === 'number') {
-    return value.toString();
+    return Number.isFinite(value) ? value.toString() : 'NULL';
   } else if (typeof value === 'string') {
     stringValue = value;
   } else {
@@ -175,13 +175,13 @@ export default class SQLite extends Database {
       try {
         await this.rollback();
       } catch (rollbackError) {
-        await this.close();
+        // await this.close();
         throw rollbackError;
       }
 
       throw ex;
     } finally {
-      await this.close();
+      // await this.close();
     }
   }
 
@@ -201,9 +201,9 @@ export default class SQLite extends Database {
     if (where) {
       for (const key of Object.keys(where)) {
         if (Array.isArray(where[key])) {
-          clause.push(pgformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, where[key]));
+          clause.push(pgformat('%s = ANY (' + this.arrayFormatString(where[key]) + ')', '`' + key + '`', where[key]));
         } else {
-          clause.push(pgformat('%I = %s', key, quoteLiteral(where[key])));
+          clause.push(pgformat('%s = %s', '`' + key + '`', quoteLiteral(where[key])));
         }
       }
     }
@@ -222,7 +222,7 @@ export default class SQLite extends Database {
     // pgbouncer.
     for (const key of Object.keys(attributes)) {
       if (includeNames) {
-        names.push(pgformat('%I', key));
+        names.push('`' + key + '`');
       }
 
       const value = attributes[key];
@@ -245,9 +245,9 @@ export default class SQLite extends Database {
       const value = attributes[key];
 
       if (value && value.raw) {
-        sets.push(pgformat('%I = %s', key, value.raw));
+        sets.push(pgformat('%s = %s', '`' + key + '`', value.raw));
       } else {
-        sets.push(pgformat('%I = %s', key, quoteLiteral(value)));
+        sets.push(pgformat('%s = %s', '`' + key + '`', quoteLiteral(value)));
       }
     }
 
