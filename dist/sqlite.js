@@ -42,7 +42,7 @@ function quoteLiteral(value) {
   } else if (value instanceof Date) {
     return value.getTime().toString();
   } else if (typeof value === 'number') {
-    return value.toString();
+    return Number.isFinite(value) ? value.toString() : 'NULL';
   } else if (typeof value === 'string') {
     stringValue = value;
   } else {
@@ -234,13 +234,13 @@ class SQLite extends _database2.default {
         try {
           yield _this5.rollback();
         } catch (rollbackError) {
-          yield _this5.close();
+          // await this.close();
           throw rollbackError;
         }
 
         throw ex;
       } finally {
-        yield _this5.close();
+        // await this.close();
       }
     })();
   }
@@ -261,9 +261,9 @@ class SQLite extends _database2.default {
     if (where) {
       for (const key of Object.keys(where)) {
         if (Array.isArray(where[key])) {
-          clause.push((0, _pgFormat2.default)('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, where[key]));
+          clause.push((0, _pgFormat2.default)('%s = ANY (' + this.arrayFormatString(where[key]) + ')', '`' + key + '`', where[key]));
         } else {
-          clause.push((0, _pgFormat2.default)('%I = %s', key, quoteLiteral(where[key])));
+          clause.push((0, _pgFormat2.default)('%s = %s', '`' + key + '`', quoteLiteral(where[key])));
         }
       }
     }
@@ -284,7 +284,7 @@ class SQLite extends _database2.default {
     // pgbouncer.
     for (const key of Object.keys(attributes)) {
       if (includeNames) {
-        names.push((0, _pgFormat2.default)('%I', key));
+        names.push('`' + key + '`');
       }
 
       const value = attributes[key];
@@ -307,9 +307,9 @@ class SQLite extends _database2.default {
       const value = attributes[key];
 
       if (value && value.raw) {
-        sets.push((0, _pgFormat2.default)('%I = %s', key, value.raw));
+        sets.push((0, _pgFormat2.default)('%s = %s', '`' + key + '`', value.raw));
       } else {
-        sets.push((0, _pgFormat2.default)('%I = %s', key, quoteLiteral(value)));
+        sets.push((0, _pgFormat2.default)('%s = %s', '`' + key + '`', quoteLiteral(value)));
       }
     }
 
