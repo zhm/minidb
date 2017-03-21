@@ -99,19 +99,23 @@ class PersistentObject extends _mixmatch2.default {
 
   static findEach(ModelClass, db, options, callback) {
     return db.findEachByAttributes(_extends({ tableName: ModelClass.tableName }, options), (() => {
-      var _ref = _asyncToGenerator(function* (columns, row, index) {
-        if (row) {
+      var _ref = _asyncToGenerator(function* (_ref2) {
+        let columns = _ref2.columns,
+            values = _ref2.values,
+            index = _ref2.index;
+
+        if (values) {
           const instance = new ModelClass();
 
-          instance.initializePersistentObject(db, row);
+          instance.initializePersistentObject(db, values);
 
-          return yield callback(instance, index, row, columns);
+          return yield callback(instance, index, values, columns);
         }
 
         return null;
       });
 
-      return function (_x, _x2, _x3) {
+      return function (_x) {
         return _ref.apply(this, arguments);
       };
     })());
@@ -290,11 +294,11 @@ class PersistentObject extends _mixmatch2.default {
   save() {
     var _this = this;
 
-    let _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    let _ref3 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-    let db = _ref2.db,
-        timestamps = _ref2.timestamps,
-        rest = _objectWithoutProperties(_ref2, ['db', 'timestamps']);
+    let db = _ref3.db,
+        timestamps = _ref3.timestamps,
+        rest = _objectWithoutProperties(_ref3, ['db', 'timestamps']);
 
     return _asyncToGenerator(function* () {
       db = db || _this.db;
@@ -336,9 +340,9 @@ class PersistentObject extends _mixmatch2.default {
   delete() {
     var _this2 = this;
 
-    var _ref3 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var _ref4 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-    let db = _ref3.db;
+    let db = _ref4.db;
     return _asyncToGenerator(function* () {
       db = db || _this2.db;
 

@@ -67,13 +67,13 @@ export default class PersistentObject extends Mixin {
   }
 
   static findEach(ModelClass, db, options, callback) {
-    return db.findEachByAttributes({tableName: ModelClass.tableName, ...options}, async (columns, row, index) => {
-      if (row) {
+    return db.findEachByAttributes({tableName: ModelClass.tableName, ...options}, async ({columns, values, index}) => {
+      if (values) {
         const instance = new ModelClass();
 
-        instance.initializePersistentObject(db, row);
+        instance.initializePersistentObject(db, values);
 
-        return await callback(instance, index, row, columns);
+        return await callback(instance, index, values, columns);
       }
 
       return null;
