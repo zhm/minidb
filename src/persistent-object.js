@@ -73,7 +73,7 @@ export default class PersistentObject extends Mixin {
 
         instance.initializePersistentObject(db, values);
 
-        return await callback(instance, index, values, columns);
+        return await callback(instance, {columns, values, index});
       }
 
       return null;

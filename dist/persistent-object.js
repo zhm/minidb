@@ -109,7 +109,7 @@ class PersistentObject extends _mixmatch2.default {
 
           instance.initializePersistentObject(db, values);
 
-          return yield callback(instance, index, values, columns);
+          return yield callback(instance, { columns: columns, values: values, index: index });
         }
 
         return null;
