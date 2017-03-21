@@ -134,14 +134,30 @@ class Postgres extends _database2.default {
     })();
   }
 
-  _execute(sql, params) {
+  query(sql, params) {
     var _this3 = this;
+
+    return _asyncToGenerator(function* () {
+      _this3.log(sql);
+
+      let client = _this3.client;
+
+      if (client == null) {
+        client = yield Postgres.connect(_this3.options.db);
+      }
+
+      return client.query(sql, params);
+    })();
+  }
+
+  _execute(sql, params) {
+    var _this4 = this;
 
     return _asyncToGenerator(function* () {
       let resultColumns = null;
       const rows = [];
 
-      yield _this3._each(sql, [], (() => {
+      yield _this4._each(sql, [], (() => {
         var _ref = _asyncToGenerator(function* (_ref2) {
           let columns = _ref2.columns,
               values = _ref2.values,
@@ -191,14 +207,14 @@ class Postgres extends _database2.default {
   }
 
   transaction(block) {
-    var _this4 = this;
+    var _this5 = this;
 
     return _asyncToGenerator(function* () {
       // get a connection from the pool and make sure it gets used throughout the
       // transaction block.
-      const client = yield Postgres.connect(_this4.options);
+      const client = yield Postgres.connect(_this5.options);
 
-      const db = new Postgres(Object.assign({}, _this4.options, { client: client }));
+      const db = new Postgres(Object.assign({}, _this5.options, { client: client }));
 
       yield db.beginTransaction();
 
@@ -358,12 +374,12 @@ class Postgres extends _database2.default {
   }
 
   insert(table, attributes, options) {
-    var _this5 = this;
+    var _this6 = this;
 
     return _asyncToGenerator(function* () {
-      const statement = _this5.insertStatement(table, attributes, options);
+      const statement = _this6.insertStatement(table, attributes, options);
 
-      const result = yield _this5.all(statement.sql, statement.values);
+      const result = yield _this6.all(statement.sql, statement.values);
 
       return +result[0].id;
     })();

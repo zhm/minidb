@@ -96,6 +96,18 @@ export default class Postgres extends Database {
     }
   }
 
+  async query(sql, params) {
+    this.log(sql);
+
+    let client = this.client;
+
+    if (client == null) {
+      client = await Postgres.connect(this.options.db);
+    }
+
+    return client.query(sql, params);
+  }
+
   async _execute(sql, params) {
     let resultColumns = null;
     const rows = [];
