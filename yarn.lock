@@ -1645,9 +1645,9 @@ minipg@^0.2.3:
     nan "^2.3.3"
     node-gyp "^3.3.1"
 
-minisqlite@^0.0.8:
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/minisqlite/-/minisqlite-0.0.8.tgz#660951071f35bde9ae94d0759295a5ae66b6b213"
+minisqlite@^0.0.9:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/minisqlite/-/minisqlite-0.0.9.tgz#7dbb4aff64277a2848ec5bed5b242aa3d2cb433d"
   dependencies:
     bindings "^1.2.1"
     eslint-plugin-babel "^4.1.1"
@@ -1655,7 +1655,6 @@ minisqlite@^0.0.8:
     nan "^2.3.3"
     node-gyp "^3.3.1"
     rimraf "^2.6.1"
-    sqlite3 "^3.1.8"
 
 mixmatch@^0.0.2:
   version "0.0.2"
@@ -1698,7 +1697,7 @@ mute-stream@0.0.5:
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.5.tgz#8fbfabb0a98a253d3184331f9e8deb7372fac6c0"
 
-nan@^2.3.0, nan@^2.3.3, nan@~2.4.0:
+nan@^2.3.0, nan@^2.3.3:
   version "2.4.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.4.0.tgz#fb3c59d45fe4effe215f0b890f8adf6eb32d2232"
 
@@ -1720,7 +1719,7 @@ node-gyp@^3.3.1:
     tar "^2.0.0"
     which "1"
 
-node-pre-gyp@^0.6.29, node-pre-gyp@~0.6.31:
+node-pre-gyp@^0.6.29:
   version "0.6.33"
   resolved "https://registry.yarnpkg.com/node-pre-gyp/-/node-pre-gyp-0.6.33.tgz#640ac55198f6a925972e0c16c4ac26a034d5ecc9"
   dependencies:
@@ -2220,13 +2219,6 @@ split@~0.3:
 sprintf-js@~1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
-
-sqlite3@^3.1.4, sqlite3@^3.1.8:
-  version "3.1.8"
-  resolved "https://registry.yarnpkg.com/sqlite3/-/sqlite3-3.1.8.tgz#4cbcf965d8b901d1b1015cbc7fc415aae157dfaa"
-  dependencies:
-    nan "~2.4.0"
-    node-pre-gyp "~0.6.31"
 
 sshpk@^1.7.0:
   version "1.11.0"

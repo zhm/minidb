@@ -1,6 +1,6 @@
 {
   "name": "minidb",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "description": "Mini ORM",
   "main": "dist/index.js",
   "repository": {
@@ -23,7 +23,7 @@
     "bluebird": "^3.5.0",
     "humanize-duration": "^3.10.0",
     "minipg": "^0.2.3",
-    "minisqlite": "^0.0.8",
+    "minisqlite": "^0.0.9",
     "mixmatch": "^0.0.2",
     "pg": "^4.5.6",
     "pg-format": "^1.0.2"
@@ -44,7 +44,6 @@
     "mocha": "^2.5.3",
     "rimraf": "^2.5.2",
     "should": "^9.0.0",
-    "source-map-support": "^0.4.0",
-    "sqlite3": "^3.1.4"
+    "source-map-support": "^0.4.0"
   }
 }
