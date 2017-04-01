@@ -1645,9 +1645,9 @@ minipg@^0.2.3:
     nan "^2.3.3"
     node-gyp "^3.3.1"
 
-minisqlite@^0.0.9:
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/minisqlite/-/minisqlite-0.0.9.tgz#7dbb4aff64277a2848ec5bed5b242aa3d2cb433d"
+minisqlite@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/minisqlite/-/minisqlite-0.0.10.tgz#f36727342bbb015c3c825d58722e4c46888bf8d5"
   dependencies:
     bindings "^1.2.1"
     eslint-plugin-babel "^4.1.1"
