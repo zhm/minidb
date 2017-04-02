@@ -187,6 +187,9 @@ export default class PersistentObject extends Mixin {
       this[name] = db.fromDatabase(value, column);
     }
 
+    this.createdAt = db.fromDatabase(attributes.created_at, {type: 'datetime'});
+    this.updatedAt = db.fromDatabase(attributes.updated_at, {type: 'datetime'});
+
     this._rowID = this.toNumber(attributes.id);
   }
 

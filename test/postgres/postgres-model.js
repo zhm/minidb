@@ -17,6 +17,7 @@ CREATE TABLE users (
   age bigint NOT NULL,
   height double precision,
   birth_date date,
+  signed_up_at timestamp with time zone,
   created_at timestamp without time zone NOT NULL,
   updated_at timestamp without time zone NOT NULL
 );

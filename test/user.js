@@ -11,7 +11,8 @@ export default class User {
       { name: 'email', column: 'email', type: 'string', null: false },
       { name: 'age', column: 'age', type: 'integer', null: false },
       { name: 'height', column: 'height', type: 'double' },
-      { name: 'birthDate', column: 'birth_date', type: 'date' }
+      { name: 'birthDate', column: 'birth_date', type: 'date' },
+      { name: 'signedUpAt', column: 'signed_up_at', type: 'datetime' }
     ];
   }
 

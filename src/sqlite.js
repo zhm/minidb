@@ -312,7 +312,7 @@ export default class SQLite extends Database {
 
     switch (column.type) {
       case 'datetime':
-        return value.toISOString();
+        return value.getTime();
 
       default:
         return super.toDatabase(value, column);
@@ -326,7 +326,7 @@ export default class SQLite extends Database {
 
     switch (column.type) {
       case 'datetime':
-        return new Date(value);
+        return new Date(+value);
 
       default:
         return super.fromDatabase(value, column);

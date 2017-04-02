@@ -20,7 +20,8 @@ CREATE TABLE users (
   height REAL,
   birth_date REAL,
   created_at REAL NOT NULL,
-  updated_at REAL NOT NULL
+  updated_at REAL NOT NULL,
+  signed_up_at REAL
 );
 
 CREATE UNIQUE INDEX idx_user_email ON users (email);

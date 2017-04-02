@@ -114,16 +114,29 @@ export default function models(driver, context, setup, teardown) {
 
       const createdAt = user.createdAt;
 
+      (user.createdAt instanceof Date).should.be.true;
+
       user.createdAt.should.not.be.null;
       user.updatedAt.should.eql(user.createdAt);
 
-      await new Promise((resolve, reject) => {
-        setTimeout(resolve, 1);
-      });
+      // wait 1ms to guarantee the timestamp gets changed
+      await new Promise(resolve => setTimeout(resolve, 1));
 
       await user.save();
 
-      user.updatedAt.toISOString().should.not.eql(createdAt.toISOString());
+      user.updatedAt.getTime().should.not.eql(createdAt.getTime());
+    }));
+
+    it('handles datetime columns', mochaAsync(async () => {
+      const {db} = context;
+
+      const user = await User.findOrCreate(db, {name: 'Terry Jenkins', email: 'terry@example.com', age: 30, signed_up_at: new Date()});
+      await user.save();
+
+      const test = await User.findFirst(db, {name: 'Terry Jenkins'});
+
+      (test.createdAt instanceof Date).should.be.true;
+      (test._signedUpAt instanceof Date).should.be.true;
     }));
   });
 }
