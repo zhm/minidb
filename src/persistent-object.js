@@ -270,7 +270,6 @@ export default class PersistentObject extends Mixin {
       await db.update(this.constructor.tableName, {id: this.rowID}, values);
     }
 
-    // It's not possible to override `async` methods currently (and be able to use `super`)
     if (this.afterSave) {
       await this.afterSave({db, timestamps, ...rest});
     }
@@ -278,13 +277,25 @@ export default class PersistentObject extends Mixin {
     return this;
   }
 
-  async delete({db} = {}) {
+  async delete({db, ...rest} = {}) {
     db = db || this.db;
 
     checkDatabase(db);
 
     if (this.isPersisted) {
+      if (this.beforeDelete) {
+        const result = await this.beforeDelete({db, ...rest});
+
+        if (result === false) {
+          return this;
+        }
+      }
+
       await db.delete(this.constructor.tableName, {id: this.rowID});
+
+      if (this.afterDelete) {
+        await this.afterDelete({db, ...rest});
+      }
 
       this._rowID = null;
       this.createdAt = null;

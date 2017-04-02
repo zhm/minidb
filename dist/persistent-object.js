@@ -328,7 +328,6 @@ class PersistentObject extends _mixmatch2.default {
         yield db.update(_this.constructor.tableName, { id: _this.rowID }, values);
       }
 
-      // It's not possible to override `async` methods currently (and be able to use `super`)
       if (_this.afterSave) {
         yield _this.afterSave(_extends({ db: db, timestamps: timestamps }, rest));
       }
@@ -340,16 +339,30 @@ class PersistentObject extends _mixmatch2.default {
   delete() {
     var _this2 = this;
 
-    var _ref4 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    let _ref4 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-    let db = _ref4.db;
+    let db = _ref4.db,
+        rest = _objectWithoutProperties(_ref4, ['db']);
+
     return _asyncToGenerator(function* () {
       db = db || _this2.db;
 
       checkDatabase(db);
 
       if (_this2.isPersisted) {
+        if (_this2.beforeDelete) {
+          const result = yield _this2.beforeDelete(_extends({ db: db }, rest));
+
+          if (result === false) {
+            return _this2;
+          }
+        }
+
         yield db.delete(_this2.constructor.tableName, { id: _this2.rowID });
+
+        if (_this2.afterDelete) {
+          yield _this2.afterDelete(_extends({ db: db }, rest));
+        }
 
         _this2._rowID = null;
         _this2.createdAt = null;
