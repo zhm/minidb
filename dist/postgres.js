@@ -273,10 +273,14 @@ class Postgres extends _database2.default {
 
     if (where) {
       for (const key of Object.keys(where)) {
-        if (Array.isArray(where[key])) {
-          clause.push((0, _pgFormat2.default)('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, where[key]));
+        const value = where[key];
+
+        if (value == null) {
+          clause.push((0, _pgFormat2.default)('%I IS NULL', key));
+        } else if (Array.isArray(value)) {
+          clause.push((0, _pgFormat2.default)('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, value));
         } else {
-          clause.push((0, _pgFormat2.default)('%I = %L', key, where[key]));
+          clause.push((0, _pgFormat2.default)('%I = %L', key, value));
         }
       }
     }

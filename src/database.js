@@ -141,7 +141,7 @@ export default class Database {
 
         if (value != null) {
           clause.push(this.ident(key) + ' = ?');
-          values.push(where[key]);
+          values.push(value);
         } else {
           clause.push(this.ident(key) + ' IS NULL');
         }

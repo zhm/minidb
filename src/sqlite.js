@@ -200,10 +200,15 @@ export default class SQLite extends Database {
 
     if (where) {
       for (const key of Object.keys(where)) {
-        if (Array.isArray(where[key])) {
-          clause.push(pgformat('%s = ANY (' + this.arrayFormatString(where[key]) + ')', '`' + key + '`', where[key]));
+        const value = where[key];
+        const columnName = '`' + key + '`';
+
+        if (value == null) {
+          clause.push(pgformat('%s IS NULL', columnName));
+        } else if (Array.isArray(value)) {
+          clause.push(pgformat('%s = ANY (' + this.arrayFormatString(where[key]) + ')', columnName, value));
         } else {
-          clause.push(pgformat('%s = %s', '`' + key + '`', quoteLiteral(where[key])));
+          clause.push(pgformat('%s = %s', columnName, quoteLiteral(where[key])));
         }
       }
     }

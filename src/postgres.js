@@ -210,10 +210,14 @@ export default class Postgres extends Database {
 
     if (where) {
       for (const key of Object.keys(where)) {
-        if (Array.isArray(where[key])) {
-          clause.push(pgformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, where[key]));
+        const value = where[key];
+
+        if (value == null) {
+          clause.push(pgformat('%I IS NULL', key));
+        } else if (Array.isArray(value)) {
+          clause.push(pgformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, value));
         } else {
-          clause.push(pgformat('%I = %L', key, where[key]));
+          clause.push(pgformat('%I = %L', key, value));
         }
       }
     }
