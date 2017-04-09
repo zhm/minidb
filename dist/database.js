@@ -191,8 +191,14 @@ class Database {
 
     if (where) {
       for (const key of Object.keys(where)) {
-        clause.push(this.ident(key) + ' = ?');
-        values.push(where[key]);
+        const value = where[key];
+
+        if (value != null) {
+          clause.push(this.ident(key) + ' = ?');
+          values.push(where[key]);
+        } else {
+          clause.push(this.ident(key) + ' IS NULL');
+        }
       }
     }
 
