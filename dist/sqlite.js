@@ -73,16 +73,19 @@ function quoteLiteral(value) {
 }
 
 class SQLite extends _database2.default {
-  createClient(_ref) {
-    let file = _ref.file;
+  open(_ref) {
+    let file = _ref.file,
+        flags = _ref.flags;
     return _asyncToGenerator(function* () {
       return new Promise(function (resolve, reject) {
-        new _minisqlite.Client().connect(file, null, null, function (err, client) {
+        const database = new _minisqlite.Database();
+
+        database.open(file, flags, null, function (err, db) {
           if (err) {
-            return reject(client ? client.lastError : err);
+            return reject(db ? db.lastError : err);
           }
 
-          return resolve(client);
+          return resolve(db);
         });
       });
     })();
@@ -92,8 +95,8 @@ class SQLite extends _database2.default {
     var _this = this;
 
     return _asyncToGenerator(function* () {
-      if (!_this.client) {
-        _this.client = yield _this.createClient(_this.options);
+      if (!_this.database) {
+        _this.database = yield _this.open(_this.options);
       }
 
       if (_this.options.wal) {
@@ -132,8 +135,7 @@ class SQLite extends _database2.default {
     return _asyncToGenerator(function* () {
       _this2.log(sql);
 
-      const close = false;
-      const client = _this2.client;
+      const database = _this2.database;
       let cursor = null;
 
       try {
@@ -155,7 +157,7 @@ class SQLite extends _database2.default {
 
         throw ex;
       } finally {
-        _this2._lastInsertID = client.lastInsertID;
+        _this2._lastInsertID = database.lastInsertID;
 
         if (cursor) {
           try {
@@ -166,10 +168,6 @@ class SQLite extends _database2.default {
             // the end. This is desired behavior, we just have to swallow any potential errors here.
           }
         }
-
-        if (close) {
-          yield client.close();
-        }
       }
     })();
   }
@@ -178,10 +176,9 @@ class SQLite extends _database2.default {
     var _this3 = this;
 
     return _asyncToGenerator(function* () {
-      if (_this3.client) {
-        yield _this3.client.close();
-
-        _this3.client = null;
+      if (_this3.database) {
+        yield _this3.database.close();
+        _this3.database = null;
       }
     })();
   }
@@ -218,7 +215,7 @@ class SQLite extends _database2.default {
   }
 
   query() {
-    return new _databaseCursor2.default(this, this.client.query(...arguments));
+    return new _databaseCursor2.default(this, this.database.query(...arguments));
   }
 
   transaction(block) {
