@@ -138,5 +138,41 @@ export default function models(driver, context, setup, teardown) {
       (test.createdAt instanceof Date).should.be.true;
       (test._signedUpAt instanceof Date).should.be.true;
     }));
+
+    it('reads back the last row ID', mochaAsync(async () => {
+      const {db} = context;
+
+      const user = await User.findOrCreate(db, {name: 'Terry Jenkins', email: 'terrytest@example.com', age: 37, signed_up_at: new Date()});
+      await user.save();
+      user.rowID.should.eql(1);
+    }));
+
+    it('query in the middle of cursor iteration', mochaAsync(async () => {
+      const {db} = context;
+
+      for (let i = 0; i < 5; ++i) {
+        const user = await User.findOrCreate(db, {name: 'John ' + i, email: `john${i}@example.com`, age: 30 + i});
+        await user.save();
+      }
+
+      await User.findEach(db, {where: {}, orderBy: 'id asc'}, async (user, {index}) => {
+        if (index > 0) {
+          const previousUser = await User.findFirst(db, {email: `john${index - 1}@example.com`});
+          user.rowID.should.eql(previousUser.rowID + 1);
+
+          // update the iterating user's age and read it back
+          // this test performs an update during an async iteration of the same objects being iterated
+          const oldAge = user._age;
+
+          user._age += 30;
+
+          await user.save();
+
+          const currentUser = await User.findFirst(db, {id: user.rowID});
+
+          currentUser._age.should.eql(oldAge + 30);
+        }
+      });
+    }));
   });
 }

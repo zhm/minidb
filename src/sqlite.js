@@ -3,7 +3,7 @@ import { format } from 'util';
 import esc from './esc';
 import Database from './database';
 import DatabaseCursor from './database-cursor';
-import { Client } from 'minisqlite';
+import { Database as SQLiteDatabase } from 'minisqlite';
 
 function quoteLiteral(value) {
   let stringValue = null;
@@ -48,21 +48,23 @@ function quoteLiteral(value) {
 }
 
 export default class SQLite extends Database {
-  async createClient({file}) {
+  async open({file, flags}) {
     return new Promise((resolve, reject) => {
-      new Client().connect(file, null, null, (err, client) => {
+      const database = new SQLiteDatabase();
+
+      database.open(file, flags, null, (err, db) => {
         if (err) {
-          return reject(client ? client.lastError : err);
+          return reject(db ? db.lastError : err);
         }
 
-        return resolve(client);
+        return resolve(db);
       });
     });
   }
 
   async setup() {
-    if (!this.client) {
-      this.client = await this.createClient(this.options);
+    if (!this.database) {
+      this.database = await this.open(this.options);
     }
 
     if (this.options.wal) {
@@ -95,8 +97,7 @@ export default class SQLite extends Database {
   async _each(sql, params, callback) {
     this.log(sql);
 
-    const close = false;
-    const client = this.client;
+    const database = this.database;
     let cursor = null;
 
     try {
@@ -118,7 +119,7 @@ export default class SQLite extends Database {
 
       throw ex;
     } finally {
-      this._lastInsertID = client.lastInsertID;
+      this._lastInsertID = database.lastInsertID;
 
       if (cursor) {
         try {
@@ -129,18 +130,13 @@ export default class SQLite extends Database {
           // the end. This is desired behavior, we just have to swallow any potential errors here.
         }
       }
-
-      if (close) {
-        await client.close();
-      }
     }
   }
 
   async close() {
-    if (this.client) {
-      await this.client.close();
-
-      this.client = null;
+    if (this.database) {
+      await this.database.close();
+      this.database = null;
     }
   }
 
@@ -162,7 +158,7 @@ export default class SQLite extends Database {
   }
 
   query(...args) {
-    return new DatabaseCursor(this, this.client.query(...args));
+    return new DatabaseCursor(this, this.database.query(...args));
   }
 
   async transaction(block) {
