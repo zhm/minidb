@@ -1,6 +1,6 @@
 {
   "name": "minidb",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Mini ORM",
   "main": "dist/index.js",
   "repository": {
@@ -23,7 +23,7 @@
     "bluebird": "^3.5.0",
     "humanize-duration": "^3.10.0",
     "minipg": "^0.3.1",
-    "minisqlite": "^1.1.0",
+    "minisqlite": "^1.2.0",
     "mixmatch": "^0.0.2",
     "pg": "^4.5.6",
     "pg-format": "^1.0.2"
