@@ -4,8 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _minipg = require('minipg');
-
 var _databaseCursor = require('./database-cursor');
 
 var _databaseCursor2 = _interopRequireDefault(_databaseCursor);
@@ -22,9 +20,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
+let driver = null;
+
 class PostgresConnection extends _databaseConnection2.default {
+  static set driver(dr) {
+    driver = dr;
+  }
+
   static pool(connectionString) {
-    return this._pool(_minipg.createPool, connectionString);
+    return this._pool(driver.createPool, connectionString);
   }
 
   static connect(options) {

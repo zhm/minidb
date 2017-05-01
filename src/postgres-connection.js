@@ -1,11 +1,16 @@
-import { createPool } from 'minipg';
 import DatabaseCursor from './database-cursor';
 import DatabaseConnection from './database-connection';
 import pg from 'pg';
 
+let driver = null;
+
 export default class PostgresConnection extends DatabaseConnection {
+  static set driver(dr) {
+    driver = dr;
+  }
+
   static pool(connectionString) {
-    return this._pool(createPool, connectionString);
+    return this._pool(driver.createPool, connectionString);
   }
 
   static async connect(options) {

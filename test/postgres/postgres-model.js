@@ -3,6 +3,9 @@ import aspromised from 'chai-as-promised';
 
 import models from '../models';
 import {Postgres} from '../../src';
+import * as minipg from 'minipg';
+
+Postgres.driver = minipg;
 
 chai.use(aspromised);
 chai.should();

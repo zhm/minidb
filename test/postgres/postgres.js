@@ -1,5 +1,8 @@
 import chai from 'chai';
 import {Postgres} from '../../src';
+import * as minipg from 'minipg';
+
+Postgres.driver = minipg;
 
 chai.should();
 

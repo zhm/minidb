@@ -42,6 +42,8 @@ _pg2.default.types.setTypeParser(20, val => {
   return val == null ? null : parseInt(val, 10);
 });
 
+let minipg = null;
+
 class Postgres extends _database2.default {
   constructor(options) {
     super(options);
@@ -49,12 +51,17 @@ class Postgres extends _database2.default {
     this.client = options.client;
   }
 
+  static set driver(driver) {
+    minipg = driver;
+    _postgresConnection2.default.driver = driver;
+  }
+
   ident(value) {
     return (0, _esc2.default)(value, '"');
   }
 
   static setNoticeProcessor(processor) {
-    _minipg.Client.defaultNoticeProcessor = processor;
+    minipg.Client.defaultNoticeProcessor = processor;
   }
 
   static connect(db) {
