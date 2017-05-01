@@ -14,8 +14,6 @@ var _pg = require('pg');
 
 var _pg2 = _interopRequireDefault(_pg);
 
-var _minipg = require('minipg');
-
 var _pgFormat = require('pg-format');
 
 var _pgFormat2 = _interopRequireDefault(_pgFormat);

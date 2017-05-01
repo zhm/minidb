@@ -1,6 +1,5 @@
 import PostgresConnection from './postgres-connection';
 import pg from 'pg';
-import { Client } from 'minipg';
 import pgformat from 'pg-format';
 import { format } from 'util';
 import esc from './esc';
