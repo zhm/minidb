@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.SQLite = exports.PostgresConnection = exports.Postgres = exports.PersistentObject = exports.Database = undefined;
+exports.MSSQL = exports.SQLite = exports.PostgresConnection = exports.Postgres = exports.PersistentObject = exports.Database = undefined;
 
 var _database = require('./database');
 
@@ -25,6 +25,10 @@ var _sqlite = require('./sqlite');
 
 var _sqlite2 = _interopRequireDefault(_sqlite);
 
+var _mssql = require('./mssql');
+
+var _mssql2 = _interopRequireDefault(_mssql);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 exports.Database = _database2.default;
@@ -32,4 +36,5 @@ exports.PersistentObject = _persistentObject2.default;
 exports.Postgres = _postgres2.default;
 exports.PostgresConnection = _postgresConnection2.default;
 exports.SQLite = _sqlite2.default;
+exports.MSSQL = _mssql2.default;
 //# sourceMappingURL=index.js.map
