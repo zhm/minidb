@@ -236,8 +236,8 @@ class PersistentObject extends _mixmatch2.default {
       this[name] = db.fromDatabase(value, column);
     }
 
-    this.createdAt = db.fromDatabase(attributes.created_at, { type: 'datetime' });
-    this.updatedAt = db.fromDatabase(attributes.updated_at, { type: 'datetime' });
+    this.objectCreatedAt = db.fromDatabase(attributes.created_at, { type: 'datetime' });
+    this.objectUpdatedAt = db.fromDatabase(attributes.updated_at, { type: 'datetime' });
 
     this._rowID = this.toNumber(attributes.id);
   }
@@ -284,10 +284,26 @@ class PersistentObject extends _mixmatch2.default {
     const now = new Date();
 
     if (!this.createdAt) {
-      this.createdAt = now;
+      this.objectCreatedAt = now;
     }
 
-    this.updatedAt = now;
+    this.objectUpdatedAt = now;
+  }
+
+  get objectCreatedAt() {
+    return this._objectCreatedAt;
+  }
+
+  get objectUpdatedAt() {
+    return this._objectUpdatedAt;
+  }
+
+  set objectCreatedAt(date) {
+    this._objectCreatedAt = date;
+  }
+
+  set objectUpdatedAt(date) {
+    this._objectUpdatedAt = date;
   }
 
   get isPersisted() {
@@ -322,8 +338,8 @@ class PersistentObject extends _mixmatch2.default {
 
       const values = _this.databaseValues(db);
 
-      values.created_at = db.toDatabase(_this.createdAt, { type: 'datetime' });
-      values.updated_at = db.toDatabase(_this.updatedAt, { type: 'datetime' });
+      values.created_at = db.toDatabase(_this.objectCreatedAt, { type: 'datetime' });
+      values.updated_at = db.toDatabase(_this.objectUpdatedAt, { type: 'datetime' });
 
       if (!_this.isPersisted) {
         _this._rowID = yield db.insert(_this.constructor.tableName, values, { pk: 'id' });
@@ -368,8 +384,8 @@ class PersistentObject extends _mixmatch2.default {
         }
 
         _this2._rowID = null;
-        _this2.createdAt = null;
-        _this2.updatedAt = null;
+        _this2.objectCreatedAt = null;
+        _this2.objectUpdatedAt = null;
       }
 
       return _this2;

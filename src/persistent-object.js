@@ -187,8 +187,8 @@ export default class PersistentObject extends Mixin {
       this[name] = db.fromDatabase(value, column);
     }
 
-    this.createdAt = db.fromDatabase(attributes.created_at, {type: 'datetime'});
-    this.updatedAt = db.fromDatabase(attributes.updated_at, {type: 'datetime'});
+    this.objectCreatedAt = db.fromDatabase(attributes.created_at, {type: 'datetime'});
+    this.objectUpdatedAt = db.fromDatabase(attributes.updated_at, {type: 'datetime'});
 
     this._rowID = this.toNumber(attributes.id);
   }
@@ -235,10 +235,26 @@ export default class PersistentObject extends Mixin {
     const now = new Date();
 
     if (!this.createdAt) {
-      this.createdAt = now;
+      this.objectCreatedAt = now;
     }
 
-    this.updatedAt = now;
+    this.objectUpdatedAt = now;
+  }
+
+  get objectCreatedAt() {
+    return this._objectCreatedAt;
+  }
+
+  get objectUpdatedAt() {
+    return this._objectUpdatedAt;
+  }
+
+  set objectCreatedAt(date) {
+    this._objectCreatedAt = date;
+  }
+
+  set objectUpdatedAt(date) {
+    this._objectUpdatedAt = date;
   }
 
   get isPersisted() {
@@ -264,8 +280,8 @@ export default class PersistentObject extends Mixin {
 
     const values = this.databaseValues(db);
 
-    values.created_at = db.toDatabase(this.createdAt, {type: 'datetime'});
-    values.updated_at = db.toDatabase(this.updatedAt, {type: 'datetime'});
+    values.created_at = db.toDatabase(this.objectCreatedAt, {type: 'datetime'});
+    values.updated_at = db.toDatabase(this.objectUpdatedAt, {type: 'datetime'});
 
     if (!this.isPersisted) {
       this._rowID = await db.insert(this.constructor.tableName, values, {pk: 'id'});
@@ -301,8 +317,8 @@ export default class PersistentObject extends Mixin {
       }
 
       this._rowID = null;
-      this.createdAt = null;
-      this.updatedAt = null;
+      this.objectCreatedAt = null;
+      this.objectUpdatedAt = null;
     }
 
     return this;
