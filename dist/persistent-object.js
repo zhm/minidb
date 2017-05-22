@@ -283,7 +283,7 @@ class PersistentObject extends _mixmatch2.default {
   updateTimestamps() {
     const now = new Date();
 
-    if (!this.createdAt) {
+    if (!this.objectCreatedAt) {
       this.objectCreatedAt = now;
     }
 

@@ -234,7 +234,7 @@ export default class PersistentObject extends Mixin {
   updateTimestamps() {
     const now = new Date();
 
-    if (!this.createdAt) {
+    if (!this.objectCreatedAt) {
       this.objectCreatedAt = now;
     }
 
