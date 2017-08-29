@@ -221,7 +221,8 @@ export default class Postgres extends Database {
         if (value == null) {
           clause.push(pgformat('%I IS NULL', key));
         } else if (Array.isArray(value)) {
-          clause.push(pgformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, value));
+          clause.push(value.length ? pgformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, value)
+                                   : pgformat('%I = ANY (%L)', key, '{}'));
         } else {
           clause.push(pgformat('%I = %L', key, value));
         }
@@ -248,7 +249,7 @@ export default class Postgres extends Database {
       const value = attributes[key];
 
       if (Array.isArray(value)) {
-        placeholders.push(pgformat('ARRAY[%L]', value));
+        placeholders.push(value.length ? pgformat('ARRAY[%L]', value) : "'{}'");
       } else if (value && value.raw) {
         placeholders.push(pgformat('%s', value.raw));
       } else {
@@ -267,7 +268,7 @@ export default class Postgres extends Database {
       const value = attributes[key];
 
       if (Array.isArray(value)) {
-        sets.push(pgformat('%I = ARRAY[%L]', key, value));
+        sets.push(value.length ? pgformat('%I = ARRAY[%L]', key, value) : pgformat('%I = %L', key, '{}'));
       } else if (value && value.raw) {
         sets.push(pgformat('%I = %s', value.raw));
       } else {

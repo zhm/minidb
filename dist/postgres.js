@@ -283,7 +283,7 @@ class Postgres extends _database2.default {
         if (value == null) {
           clause.push((0, _pgFormat2.default)('%I IS NULL', key));
         } else if (Array.isArray(value)) {
-          clause.push((0, _pgFormat2.default)('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, value));
+          clause.push(value.length ? (0, _pgFormat2.default)('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, value) : (0, _pgFormat2.default)('%I = ANY (%L)', key, '{}'));
         } else {
           clause.push((0, _pgFormat2.default)('%I = %L', key, value));
         }
@@ -312,7 +312,7 @@ class Postgres extends _database2.default {
       const value = attributes[key];
 
       if (Array.isArray(value)) {
-        placeholders.push((0, _pgFormat2.default)('ARRAY[%L]', value));
+        placeholders.push(value.length ? (0, _pgFormat2.default)('ARRAY[%L]', value) : "'{}'");
       } else if (value && value.raw) {
         placeholders.push((0, _pgFormat2.default)('%s', value.raw));
       } else {
@@ -331,7 +331,7 @@ class Postgres extends _database2.default {
       const value = attributes[key];
 
       if (Array.isArray(value)) {
-        sets.push((0, _pgFormat2.default)('%I = ARRAY[%L]', key, value));
+        sets.push(value.length ? (0, _pgFormat2.default)('%I = ARRAY[%L]', key, value) : (0, _pgFormat2.default)('%I = %L', key, '{}'));
       } else if (value && value.raw) {
         sets.push((0, _pgFormat2.default)('%I = %s', value.raw));
       } else {

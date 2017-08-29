@@ -127,6 +127,23 @@ export default class PersistentObject extends Mixin {
     for (const method of PersistentObject.modelMethods) {
       modelClass[method] = wrap(method);
     }
+
+    for (const column of modelClass.columns) {
+      if (column.simple) {
+        const varName = '_' + column.name;
+
+        Object.defineProperty(modelClass.prototype, column.name, {
+          get: () => {
+            return this[varName];
+          },
+          set: (value) => {
+            this[varName] = value;
+          },
+          enumerable: true,
+          configurable: true
+        });
+      }
+    }
   }
 
   assignAttributes(attributes) {
