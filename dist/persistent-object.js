@@ -182,10 +182,10 @@ class PersistentObject extends _mixmatch2.default {
         const varName = '_' + column.name;
 
         Object.defineProperty(modelClass.prototype, column.name, {
-          get: () => {
+          get: function getter() {
             return this[varName];
           },
-          set: value => {
+          set: function setter(value) {
             this[varName] = value;
           },
           enumerable: true,
