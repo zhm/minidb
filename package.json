@@ -1,6 +1,6 @@
 {
   "name": "minidb",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "description": "Mini ORM",
   "main": "dist/index.js",
   "repository": {

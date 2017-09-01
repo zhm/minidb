@@ -242,15 +242,12 @@ class PersistentObject extends _mixmatch2.default {
 
     checkDatabase(db);
 
-    for (const column of this.constructor.columns) {
-      const name = '_' + column.name;
-      const value = attributes[column.column];
+    for (const key of Object.keys(attributes)) {
+      const column = this.columnsByColumnName[key];
 
-      // if (value == null && column[2] && column[2].null === false) {
-      //   console.warn(format('column %s cannot be null', name));
-      // }
-
-      this[name] = db.fromDatabase(value, column);
+      if (column) {
+        this['_' + column.name] = db.fromDatabase(attributes[column.column], column);
+      }
     }
 
     this.objectCreatedAt = db.fromDatabase(attributes.created_at, { type: 'datetime' });
