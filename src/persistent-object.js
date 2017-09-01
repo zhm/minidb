@@ -85,7 +85,7 @@ export default class PersistentObject extends Mixin {
 
     const instance = new ModelClass();
 
-    instance.initializePersistentObject(db, row || attributes);
+    instance.initializePersistentObject(db, {...row, ...attributes});
 
     return instance;
   }

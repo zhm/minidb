@@ -127,7 +127,7 @@ class PersistentObject extends _mixmatch2.default {
 
       const instance = new ModelClass();
 
-      instance.initializePersistentObject(db, row || attributes);
+      instance.initializePersistentObject(db, _extends({}, row, attributes));
 
       return instance;
     })();
