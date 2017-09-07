@@ -239,10 +239,10 @@ class PersistentObject extends _mixmatch2.default {
 
   _assignAttributes(attributes) {
     for (const key of Object.keys(attributes)) {
-      const column = this.columnsByColumnName[key];
+      const attr = this.columnsByAttributeName[key];
 
-      if (column) {
-        this['_' + column.name] = attributes[column.column];
+      if (attr) {
+        this['_' + attr.name] = attributes[attr.name];
       }
     }
   }
