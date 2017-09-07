@@ -83,6 +83,20 @@ class PersistentObject extends _mixmatch2.default {
     })();
   }
 
+  static findAllBySQL(ModelClass, db, sql, values) {
+    return _asyncToGenerator(function* () {
+      const rows = yield db.all(sql, values);
+
+      return rows.map(function (row) {
+        const instance = new ModelClass();
+
+        instance.initializePersistentObject(db, row);
+
+        return instance;
+      });
+    })();
+  }
+
   static findAll(ModelClass, db, attributes, orderBy) {
     return _asyncToGenerator(function* () {
       const rows = yield db.findAllByAttributes(ModelClass.tableName, null, attributes, orderBy);
@@ -97,8 +111,8 @@ class PersistentObject extends _mixmatch2.default {
     })();
   }
 
-  static findEach(ModelClass, db, options, callback) {
-    return db.findEachByAttributes(_extends({ tableName: ModelClass.tableName }, options), (() => {
+  static findEachBySQL(ModelClass, db, sql, params, callback) {
+    return db.each(sql, params, (() => {
       var _ref = _asyncToGenerator(function* (_ref2) {
         let columns = _ref2.columns,
             values = _ref2.values,
@@ -117,6 +131,30 @@ class PersistentObject extends _mixmatch2.default {
 
       return function (_x) {
         return _ref.apply(this, arguments);
+      };
+    })());
+  }
+
+  static findEach(ModelClass, db, options, callback) {
+    return db.findEachByAttributes(_extends({ tableName: ModelClass.tableName }, options), (() => {
+      var _ref3 = _asyncToGenerator(function* (_ref4) {
+        let columns = _ref4.columns,
+            values = _ref4.values,
+            index = _ref4.index;
+
+        if (values) {
+          const instance = new ModelClass();
+
+          instance.initializePersistentObject(db, values);
+
+          return yield callback(instance, { columns: columns, values: values, index: index });
+        }
+
+        return null;
+      });
+
+      return function (_x2) {
+        return _ref3.apply(this, arguments);
       };
     })());
   }
@@ -150,7 +188,7 @@ class PersistentObject extends _mixmatch2.default {
   }
 
   static get modelMethods() {
-    return ['findFirst', 'findFirstColumns', 'findAll', 'findAllColumns', 'findEach', 'findOrCreate', 'create', 'count'];
+    return ['findFirst', 'findFirstColumns', 'findAll', 'findAllBySQL', 'findAllColumns', 'findEach', 'findEachBySQL', 'findOrCreate', 'create', 'count'];
   }
 
   static get models() {
@@ -327,11 +365,11 @@ class PersistentObject extends _mixmatch2.default {
   save() {
     var _this = this;
 
-    let _ref3 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    let _ref5 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-    let db = _ref3.db,
-        timestamps = _ref3.timestamps,
-        rest = _objectWithoutProperties(_ref3, ['db', 'timestamps']);
+    let db = _ref5.db,
+        timestamps = _ref5.timestamps,
+        rest = _objectWithoutProperties(_ref5, ['db', 'timestamps']);
 
     return _asyncToGenerator(function* () {
       db = db || _this.db;
@@ -372,10 +410,10 @@ class PersistentObject extends _mixmatch2.default {
   delete() {
     var _this2 = this;
 
-    let _ref4 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    let _ref6 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-    let db = _ref4.db,
-        rest = _objectWithoutProperties(_ref4, ['db']);
+    let db = _ref6.db,
+        rest = _objectWithoutProperties(_ref6, ['db']);
 
     return _asyncToGenerator(function* () {
       db = db || _this2.db;

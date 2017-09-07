@@ -54,6 +54,18 @@ export default class PersistentObject extends Mixin {
     return await db.findAllByAttributes(ModelClass.tableName, columns, attributes);
   }
 
+  static async findAllBySQL(ModelClass, db, sql, values) {
+    const rows = await db.all(sql, values);
+
+    return rows.map((row) => {
+      const instance = new ModelClass();
+
+      instance.initializePersistentObject(db, row);
+
+      return instance;
+    });
+  }
+
   static async findAll(ModelClass, db, attributes, orderBy) {
     const rows = await db.findAllByAttributes(ModelClass.tableName, null, attributes, orderBy);
 
@@ -63,6 +75,20 @@ export default class PersistentObject extends Mixin {
       instance.initializePersistentObject(db, row);
 
       return instance;
+    });
+  }
+
+  static findEachBySQL(ModelClass, db, sql, params, callback) {
+    return db.each(sql, params, async ({columns, values, index}) => {
+      if (values) {
+        const instance = new ModelClass();
+
+        instance.initializePersistentObject(db, values);
+
+        return await callback(instance, {columns, values, index});
+      }
+
+      return null;
     });
   }
 
@@ -105,7 +131,7 @@ export default class PersistentObject extends Mixin {
   }
 
   static get modelMethods() {
-    return [ 'findFirst', 'findFirstColumns', 'findAll', 'findAllColumns', 'findEach', 'findOrCreate', 'create', 'count' ];
+    return [ 'findFirst', 'findFirstColumns', 'findAll', 'findAllBySQL', 'findAllColumns', 'findEach', 'findEachBySQL', 'findOrCreate', 'create', 'count' ];
   }
 
   static get models() {
