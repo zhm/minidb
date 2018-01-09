@@ -30,8 +30,17 @@ const shortEnglishHumanizer = _humanizeDuration2.default.humanizer({
 });
 
 class Database {
+
   constructor(options) {
     this.options = options;
+  }
+
+  static setTypeConverter(type, converter) {
+    if (converter) {
+      Database.TYPE_CONVERTERS[type] = converter;
+    } else if (type) {
+      delete Database.TYPE_CONVERTERS[type];
+    }
   }
 
   get verbose() {
@@ -412,6 +421,10 @@ class Database {
       return null;
     }
 
+    if (Database.TYPE_CONVERTERS[column.type]) {
+      return Database.TYPE_CONVERTERS[column.type].toDatabase(value, column);
+    }
+
     switch (column.type) {
       case 'string':
         return value.toString();
@@ -441,6 +454,10 @@ class Database {
       return null;
     }
 
+    if (Database.TYPE_CONVERTERS[column.type]) {
+      return Database.TYPE_CONVERTERS[column.type].fromDatabase(value, column);
+    }
+
     switch (column.type) {
       case 'string':
         return value.toString();
@@ -466,4 +483,5 @@ class Database {
   }
 }
 exports.default = Database;
+Database.TYPE_CONVERTERS = {};
 //# sourceMappingURL=database.js.map
