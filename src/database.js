@@ -12,8 +12,18 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default class Database {
+  static TYPE_CONVERTERS = {};
+
   constructor(options) {
     this.options = options;
+  }
+
+  static setTypeConverter(type, converter) {
+    if (converter) {
+      Database.TYPE_CONVERTERS[type] = converter;
+    } else if (type) {
+      delete Database.TYPE_CONVERTERS[type];
+    }
   }
 
   get verbose() {
@@ -329,6 +339,10 @@ export default class Database {
       return null;
     }
 
+    if (Database.TYPE_CONVERTERS[column.type]) {
+      return Database.TYPE_CONVERTERS[column.type].toDatabase(value, column);
+    }
+
     switch (column.type) {
       case 'string':
         return value.toString();
@@ -356,6 +370,10 @@ export default class Database {
   fromDatabase(value, column) {
     if (value == null) {
       return null;
+    }
+
+    if (Database.TYPE_CONVERTERS[column.type]) {
+      return Database.TYPE_CONVERTERS[column.type].fromDatabase(value, column);
     }
 
     switch (column.type) {

@@ -1,4 +1,15 @@
-import {PersistentObject} from '../src';
+import {PersistentObject, Database} from '../src';
+import BigNumber from 'bignumber.js';
+
+Database.setTypeConverter('decimal', {
+  toDatabase: (value) => {
+    return value.toString();
+  },
+
+  fromDatabase: (value) => {
+    return BigNumber(value);
+  }
+});
 
 export default class User {
   static get tableName() {
@@ -7,12 +18,13 @@ export default class User {
 
   static get columns() {
     return [
-      { name: 'name', column: 'name', type: 'string', null: false },
-      { name: 'email', column: 'email', type: 'string', null: false },
-      { name: 'age', column: 'age', type: 'integer', null: false },
-      { name: 'height', column: 'height', type: 'double' },
-      { name: 'birthDate', column: 'birth_date', type: 'date' },
-      { name: 'signedUpAt', column: 'signed_up_at', type: 'datetime' }
+      { name: 'name', column: 'name', type: 'string', null: false, simple: true },
+      { name: 'email', column: 'email', type: 'string', null: false, simple: true },
+      { name: 'age', column: 'age', type: 'integer', null: false, simple: true },
+      { name: 'height', column: 'height', type: 'double', simple: true },
+      { name: 'birthDate', column: 'birth_date', type: 'date', simple: true },
+      { name: 'signedUpAt', column: 'signed_up_at', type: 'datetime', simple: true },
+      { name: 'revenue', column: 'revenue', type: 'decimal', simple: true }
     ];
   }
 

@@ -3,6 +3,7 @@
 import chai from 'chai';
 import aspromised from 'chai-as-promised';
 import {shouldThrow, mochaAsync} from './helper';
+import BigNumber from 'bignumber.js';
 
 import User from './user';
 
@@ -19,7 +20,10 @@ export default function models(driver, context, setup, teardown) {
         const {db} = context;
 
         {
-          const user = await User.findOrCreate(db, {name: 'John', email: 'john@example.com', age: 30});
+          const user = await User.findOrCreate(db, {name: 'John', email: 'john@example.com', age: 30, revenue: '3.0001'});
+
+          user.revenue.should.be.instanceof(BigNumber);
+
           await user.save();
         }
 

@@ -21,6 +21,7 @@ CREATE TABLE users (
   height double precision,
   birth_date date,
   signed_up_at timestamp with time zone,
+  revenue decimal(20, 8),
   created_at timestamp without time zone NOT NULL,
   updated_at timestamp without time zone NOT NULL
 );

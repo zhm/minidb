@@ -19,6 +19,7 @@ CREATE TABLE users (
   age INTEGER NOT NULL,
   height REAL,
   birth_date REAL,
+  revenue REAL,
   created_at REAL NOT NULL,
   updated_at REAL NOT NULL,
   signed_up_at REAL
