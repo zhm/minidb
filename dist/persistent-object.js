@@ -288,8 +288,15 @@ class PersistentObject extends _mixmatch2.default {
     for (const key of Object.keys(attributes)) {
       const column = this.columnsByColumnName[key];
 
-      if (column) {
-        this['_' + column.name] = db.fromDatabase(attributes[column.column], column);
+      const value = column && db.fromDatabase(attributes[column.column], column);
+
+      if (column && column.simple) {
+        // call the setter
+        this[column.name] = value;
+      } else if (column) {
+        this['_' + column.name] = value;
+      } else if (key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
+        throw new Error((0, _util.format)("column definition for '%s' does not exist", key));
       }
     }
 
