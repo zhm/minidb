@@ -35,11 +35,11 @@ class Database {
     this.options = options;
   }
 
-  static setTypeConverter(type, converter) {
-    if (converter) {
-      Database.TYPE_CONVERTERS[type] = converter;
-    } else if (type) {
-      delete Database.TYPE_CONVERTERS[type];
+  static setCustomType(typeName, definition) {
+    if (definition) {
+      Database.CUSTOM_TYPES[typeName] = definition;
+    } else if (typeName) {
+      delete Database.CUSTOM_TYPES[typeName];
     }
   }
 
@@ -421,8 +421,8 @@ class Database {
       return null;
     }
 
-    if (Database.TYPE_CONVERTERS[column.type]) {
-      return Database.TYPE_CONVERTERS[column.type].toDatabase(value, column);
+    if (Database.CUSTOM_TYPES[column.type]) {
+      return Database.CUSTOM_TYPES[column.type].toDatabase(value, column);
     }
 
     switch (column.type) {
@@ -454,8 +454,8 @@ class Database {
       return null;
     }
 
-    if (Database.TYPE_CONVERTERS[column.type]) {
-      return Database.TYPE_CONVERTERS[column.type].fromDatabase(value, column);
+    if (Database.CUSTOM_TYPES[column.type]) {
+      return Database.CUSTOM_TYPES[column.type].fromDatabase(value, column);
     }
 
     switch (column.type) {
@@ -483,5 +483,5 @@ class Database {
   }
 }
 exports.default = Database;
-Database.TYPE_CONVERTERS = {};
+Database.CUSTOM_TYPES = {};
 //# sourceMappingURL=database.js.map

@@ -219,11 +219,16 @@ class PersistentObject extends _mixmatch2.default {
       if (column.simple) {
         const varName = '_' + column.name;
 
+        const customType = _database2.default.CUSTOM_TYPES[column.type];
+
+        const customGetter = customType && customType.getter ? customType.getter({ varName: varName, column: column }) : null;
+        const customSetter = customType && customType.setter ? customType.setter({ varName: varName, column: column }) : null;
+
         Object.defineProperty(modelClass.prototype, column.name, {
-          get: function getter() {
+          get: customGetter || function getter() {
             return this[varName];
           },
-          set: function setter(value) {
+          set: customSetter || function setter(value) {
             this[varName] = value;
           },
           enumerable: true,
