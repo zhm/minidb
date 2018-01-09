@@ -1,13 +1,19 @@
 import {PersistentObject, Database} from '../src';
 import BigNumber from 'bignumber.js';
 
-Database.setTypeConverter('decimal', {
+Database.setCustomType('decimal', {
   toDatabase: (value) => {
     return value.toString();
   },
 
   fromDatabase: (value) => {
     return BigNumber(value);
+  },
+
+  setter: ({varName, column}) => {
+    return function setter(value) {
+      this[varName] = value != null ? BigNumber(value) : null;
+    };
   }
 });
 

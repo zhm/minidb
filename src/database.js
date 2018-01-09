@@ -12,17 +12,17 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default class Database {
-  static TYPE_CONVERTERS = {};
+  static CUSTOM_TYPES = {};
 
   constructor(options) {
     this.options = options;
   }
 
-  static setTypeConverter(type, converter) {
-    if (converter) {
-      Database.TYPE_CONVERTERS[type] = converter;
-    } else if (type) {
-      delete Database.TYPE_CONVERTERS[type];
+  static setCustomType(typeName, definition) {
+    if (definition) {
+      Database.CUSTOM_TYPES[typeName] = definition;
+    } else if (typeName) {
+      delete Database.CUSTOM_TYPES[typeName];
     }
   }
 
@@ -339,8 +339,8 @@ export default class Database {
       return null;
     }
 
-    if (Database.TYPE_CONVERTERS[column.type]) {
-      return Database.TYPE_CONVERTERS[column.type].toDatabase(value, column);
+    if (Database.CUSTOM_TYPES[column.type]) {
+      return Database.CUSTOM_TYPES[column.type].toDatabase(value, column);
     }
 
     switch (column.type) {
@@ -372,8 +372,8 @@ export default class Database {
       return null;
     }
 
-    if (Database.TYPE_CONVERTERS[column.type]) {
-      return Database.TYPE_CONVERTERS[column.type].fromDatabase(value, column);
+    if (Database.CUSTOM_TYPES[column.type]) {
+      return Database.CUSTOM_TYPES[column.type].fromDatabase(value, column);
     }
 
     switch (column.type) {
