@@ -183,10 +183,15 @@ export default class PersistentObject extends Mixin {
 
   _assignAttributes(attributes) {
     for (const key of Object.keys(attributes)) {
-      const attr = this.columnsByAttributeName[key];
+      const column = this.columnsByAttributeName[key];
 
-      if (attr) {
-        this['_' + attr.name] = attributes[attr.name];
+      if (column) {
+        if (column.simple) {
+          // use the setter
+          this[column.name] = attributes[column.name];
+        } else {
+          this['_' + column.name] = attributes[column.name];
+        }
       }
     }
   }
