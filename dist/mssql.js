@@ -10,9 +10,9 @@ var _postgresConnection = require('./postgres-connection');
 
 var _postgresConnection2 = _interopRequireDefault(_postgresConnection);
 
-var _pgFormat = require('pg-format');
+var _mssqlFormat = require('./mssql-format');
 
-var _pgFormat2 = _interopRequireDefault(_pgFormat);
+var _mssqlFormat2 = _interopRequireDefault(_mssqlFormat);
 
 var _util = require('util');
 
@@ -132,9 +132,9 @@ class MSSQL extends _database2.default {
         if (value == null) {
           clause.push((0, _util.format)('[%s] IS NULL', key));
           // } else if (Array.isArray(value)) {
-          //   clause.push(pgformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, value));
+          //   clause.push(mssqlformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, value));
         } else {
-          clause.push((0, _pgFormat2.default)('[%s] = %L', key, value));
+          clause.push((0, _mssqlFormat2.default)('[%s] = %L', key, value));
         }
       }
     }
@@ -162,13 +162,13 @@ class MSSQL extends _database2.default {
 
       if (Array.isArray(value)) {
         // placeholders.push(format('ARRAY[%L]', value));
-        placeholders.push((0, _pgFormat2.default)('%L', value.toString()));
+        placeholders.push((0, _mssqlFormat2.default)('%L', value.toString()));
       } else if (value instanceof Date) {
-        placeholders.push((0, _pgFormat2.default)('%L', value.toISOString()));
+        placeholders.push((0, _mssqlFormat2.default)('%L', value.toISOString()));
       } else if (value && value.raw) {
         placeholders.push((0, _util.format)('%s', value.raw));
       } else {
-        placeholders.push((0, _pgFormat2.default)('%L', value));
+        placeholders.push((0, _mssqlFormat2.default)('%L', value));
       }
     }
 
@@ -183,14 +183,14 @@ class MSSQL extends _database2.default {
       const value = attributes[key];
 
       if (Array.isArray(value)) {
-        // sets.push(pgformat('%I = ARRAY[%L]', key, value));
-        sets.push((0, _pgFormat2.default)('[%s] = %L', key, value));
+        // sets.push(mssqlformat('%I = ARRAY[%L]', key, value));
+        sets.push((0, _mssqlFormat2.default)('[%s] = %L', key, value));
       } else if (value instanceof Date) {
-        sets.push((0, _pgFormat2.default)('[%s] = %L', key, value.toISOString()));
+        sets.push((0, _mssqlFormat2.default)('[%s] = %L', key, value.toISOString()));
       } else if (value && value.raw) {
         sets.push((0, _util.format)('[%s] = %s', value.raw));
       } else {
-        sets.push((0, _pgFormat2.default)('[%s] = %L', key, value));
+        sets.push((0, _mssqlFormat2.default)('[%s] = %L', key, value));
       }
     }
 

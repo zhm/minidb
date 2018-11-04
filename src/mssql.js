@@ -1,5 +1,5 @@
 import PostgresConnection from './postgres-connection';
-import pgformat from 'pg-format';
+import mssqlformat from './mssql-format';
 import { format } from 'util';
 import esc from './esc';
 import Database from './database';
@@ -94,9 +94,9 @@ export default class MSSQL extends Database {
         if (value == null) {
           clause.push(format('[%s] IS NULL', key));
         // } else if (Array.isArray(value)) {
-        //   clause.push(pgformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, value));
+        //   clause.push(mssqlformat('%I = ANY (' + this.arrayFormatString(where[key]) + ')', key, value));
         } else {
-          clause.push(pgformat('[%s] = %L', key, value));
+          clause.push(mssqlformat('[%s] = %L', key, value));
         }
       }
     }
@@ -122,13 +122,13 @@ export default class MSSQL extends Database {
 
       if (Array.isArray(value)) {
         // placeholders.push(format('ARRAY[%L]', value));
-        placeholders.push(pgformat('%L', value.toString()));
+        placeholders.push(mssqlformat('%L', value.toString()));
       } else if (value instanceof Date) {
-        placeholders.push(pgformat('%L', value.toISOString()));
+        placeholders.push(mssqlformat('%L', value.toISOString()));
       } else if (value && value.raw) {
         placeholders.push(format('%s', value.raw));
       } else {
-        placeholders.push(pgformat('%L', value));
+        placeholders.push(mssqlformat('%L', value));
       }
     }
 
@@ -143,14 +143,14 @@ export default class MSSQL extends Database {
       const value = attributes[key];
 
       if (Array.isArray(value)) {
-        // sets.push(pgformat('%I = ARRAY[%L]', key, value));
-        sets.push(pgformat('[%s] = %L', key, value));
+        // sets.push(mssqlformat('%I = ARRAY[%L]', key, value));
+        sets.push(mssqlformat('[%s] = %L', key, value));
       } else if (value instanceof Date) {
-        sets.push(pgformat('[%s] = %L', key, value.toISOString()));
+        sets.push(mssqlformat('[%s] = %L', key, value.toISOString()));
       } else if (value && value.raw) {
         sets.push(format('[%s] = %s', value.raw));
       } else {
-        sets.push(pgformat('[%s] = %L', key, value));
+        sets.push(mssqlformat('[%s] = %L', key, value));
       }
     }
 
