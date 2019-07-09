@@ -240,7 +240,7 @@ export default class PersistentObject extends Mixin {
       } else if (column) {
         this['_' + column.name] = value;
       } else if (key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
-        throw new Error(format("column definition for '%s' does not exist", key));
+        // throw new Error(format("column definition for '%s' does not exist", key));
       }
     }
 

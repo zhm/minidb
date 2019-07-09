@@ -301,7 +301,7 @@ class PersistentObject extends _mixmatch2.default {
       } else if (column) {
         this['_' + column.name] = value;
       } else if (key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
-        throw new Error((0, _util.format)("column definition for '%s' does not exist", key));
+        // throw new Error(format("column definition for '%s' does not exist", key));
       }
     }
 
