@@ -1650,10 +1650,10 @@ minimist@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.0.tgz#a35008b20f41383eec1fb914f4cd5df79a264284"
 
-minipg@^0.4.1:
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/minipg/-/minipg-0.4.1.tgz#86766e9fe156470ab7c9c88e2786b508a5e5a4b9"
-  integrity sha512-kV2fpEyqGvz0PnedpUNEsCYDOrJbSpqZEJC/nEkHHDMhTB6BnS5qYfsb+VA28POe6HCMgohKgVmZPEVN8Y8WKg==
+minipg@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/minipg/-/minipg-0.4.2.tgz#168fe169a5c7b6fd3632d9caf8f38a1af4eb65ad"
+  integrity sha512-Pb5XRMkyf4jFpkHu3qIGXJ8p3Xk1tzwKQxYhfwfsrizyfvgEK/HVjYHm3UZjJcPW+OAxQgbI4MwOcgsLbRj8zw==
   dependencies:
     bindings "^1.2.1"
     generic-pool "^2.4.2"
