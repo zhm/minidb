@@ -47,7 +47,7 @@ export default class DatabaseConnection {
     if (pool == null) {
       const params = {
         db: connectionString,
-        max: 25,
+        max: DatabaseConnection.maxConnections,
         idleTimeoutMillis: DatabaseConnection.idleTimeoutMillis,
         reapIntervalMillis: DatabaseConnection.reapIntervalMillis
       };
@@ -71,5 +71,6 @@ export default class DatabaseConnection {
   }
 }
 
+DatabaseConnection.maxConnections = null;
 DatabaseConnection.idleTimeoutMillis = null;
 DatabaseConnection.reapIntervalMillis = null;
