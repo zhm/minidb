@@ -28,7 +28,7 @@ class PostgresConnection extends _databaseConnection2.default {
   }
 
   static pool(connectionString) {
-    return this._pool(driver.createPool, connectionString);
+    return this._pool(driver.createPool, connectionString, PostgresConnection.poolOptions);
   }
 
   static connect(options) {

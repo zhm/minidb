@@ -10,7 +10,7 @@ export default class PostgresConnection extends DatabaseConnection {
   }
 
   static pool(connectionString) {
-    return this._pool(driver.createPool, connectionString);
+    return this._pool(driver.createPool, connectionString, PostgresConnection.poolOptions);
   }
 
   static async connect(options) {

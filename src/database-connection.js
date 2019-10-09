@@ -41,15 +41,13 @@ export default class DatabaseConnection {
     });
   }
 
-  static _pool(createPool, connectionString) {
+  static _pool(createPool, connectionString, poolOptions = {}) {
     let pool = POOLS[connectionString];
 
     if (pool == null) {
       const params = {
-        db: connectionString,
-        max: DatabaseConnection.maxConnections,
-        idleTimeoutMillis: DatabaseConnection.idleTimeoutMillis,
-        reapIntervalMillis: DatabaseConnection.reapIntervalMillis
+        ...poolOptions,
+        db: connectionString
       };
 
       pool = POOLS[connectionString] = createPool(params);
@@ -70,7 +68,3 @@ export default class DatabaseConnection {
     }
   }
 }
-
-DatabaseConnection.maxConnections = null;
-DatabaseConnection.idleTimeoutMillis = null;
-DatabaseConnection.reapIntervalMillis = null;
