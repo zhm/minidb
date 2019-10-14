@@ -1844,10 +1844,10 @@ minipg@^0.4.2:
     generic-pool "^2.4.2"
     nan "^2.3.3"
 
-minisqlite@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/minisqlite/-/minisqlite-2.1.0.tgz#9b8f5b4bbac6738c69e72324c14e7199f6483fca"
-  integrity sha512-8X3UcQaHr5WW0oSwpgsaK7zBbqYWX4JgmsTcg/4FxIyxoxbewqJNYOWxzqqxOFp8CxTB1UFA4zhB3PgSdliWeA==
+minisqlite@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/minisqlite/-/minisqlite-2.1.1.tgz#88db79e855c351c5bd18071d90dd2811ca3835ff"
+  integrity sha512-oKVbHbo6ig0ABINw4yEU0yPLFDDQbgpkEnZLm3equ5VBtYUe6REnOvnFSXCHfaLogm6zgXwpducVUZY7JcbQhw==
   dependencies:
     bindings "^1.2.1"
     eslint-plugin-babel "^4.1.1"
