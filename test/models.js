@@ -2,7 +2,7 @@
 
 import chai from 'chai';
 import aspromised from 'chai-as-promised';
-import {shouldThrow, mochaAsync} from './helper';
+import { shouldThrow } from './helper';
 import BigNumber from 'bignumber.js';
 
 import User from './user';
@@ -15,34 +15,27 @@ export default function models(driver, context, setup, teardown) {
     beforeEach(setup);
     afterEach(teardown);
 
-    it('creates an instance', async (done) => {
-      try {
-        const {db} = context;
+    it('creates an instance', async () => {
+      const {db} = context;
 
-        {
-          const user = await User.findOrCreate(db, {name: 'John', email: 'john@example.com', age: 30, revenue: '3.0001'});
+      {
+        const user = await User.findOrCreate(db, {name: 'John', email: 'john@example.com', age: 30, revenue: '3.0001'});
 
-          user.revenue.should.be.instanceof(BigNumber);
-          user.revenue = 7;
-          user.revenue.should.be.instanceof(BigNumber);
+        user.revenue.should.be.instanceof(BigNumber);
+        user.revenue = 7;
+        user.revenue.should.be.instanceof(BigNumber);
 
-          await user.save();
-        }
+        await user.save();
+      }
 
-        {
-          const user2 = await User.findOrCreate(db, {name: 'John', email: 'john@example.com', age: 30});
-          await user2.save();
-          user2.rowID.should.eql(1);
-        }
-
-        done();
-      } catch (ex) {
-        console.log(ex);
-        done(ex);
+      {
+        const user2 = await User.findOrCreate(db, {name: 'John', email: 'john@example.com', age: 30});
+        await user2.save();
+        user2.rowID.should.eql(1);
       }
     });
 
-    it('creates multiple instances', mochaAsync(async () => {
+    it('creates multiple instances', async () => {
       const {db} = context;
 
       {
@@ -69,9 +62,9 @@ export default function models(driver, context, setup, teardown) {
         user.age.should.eql(32);
         // user.rowID.should.eql(2);
       }
-    }));
+    });
 
-    it('deletes instances', mochaAsync(async () => {
+    it('deletes instances', async () => {
       const {db} = context;
 
       const user = await User.findOrCreate(db, {name: 'John', email: 'john@example.com', age: 30});
@@ -84,9 +77,9 @@ export default function models(driver, context, setup, teardown) {
       should.not.exist(user.rowID);
 
       (await User.count(db)).should.eql(0);
-    }));
+    });
 
-    it('errors when a unique index is violated', mochaAsync(async () => {
+    it('errors when a unique index is violated', async () => {
       const {db} = context;
       let user = null;
 
@@ -99,9 +92,9 @@ export default function models(driver, context, setup, teardown) {
       await shouldThrow(user.save());
 
       (await User.count(db)).should.eql(1);
-    }));
+    });
 
-    it('errors when a non-null column is saved', mochaAsync(async () => {
+    it('errors when a non-null column is saved', async () => {
       const {db} = context;
       const user = User.create(db, {name: 'John', email: 'john@example.com', age: null});
 
@@ -110,9 +103,9 @@ export default function models(driver, context, setup, teardown) {
       should.not.exist(user.rowID);
 
       (await User.count(db)).should.eql(0);
-    }));
+    });
 
-    it('updates the timestamps properly', mochaAsync(async () => {
+    it('updates the timestamps properly', async () => {
       const {db} = context;
 
       const user = await User.findOrCreate(db, {name: 'John', email: 'john@example.com', age: 30});
@@ -131,9 +124,9 @@ export default function models(driver, context, setup, teardown) {
       await user.save();
 
       user.objectUpdatedAt.getTime().should.not.eql(createdAt.getTime());
-    }));
+    });
 
-    it('handles datetime columns', mochaAsync(async () => {
+    it('handles datetime columns', async () => {
       const {db} = context;
 
       const user = await User.findOrCreate(db, {name: 'Terry Jenkins', email: 'terry@example.com', age: 30, signed_up_at: new Date()});
@@ -143,17 +136,17 @@ export default function models(driver, context, setup, teardown) {
 
       (test.objectCreatedAt instanceof Date).should.be.true;
       (test._signedUpAt instanceof Date).should.be.true;
-    }));
+    });
 
-    it('reads back the last row ID', mochaAsync(async () => {
+    it('reads back the last row ID', async () => {
       const {db} = context;
 
       const user = await User.findOrCreate(db, {name: 'Terry Jenkins', email: 'terrytest@example.com', age: 37, signed_up_at: new Date()});
       await user.save();
       user.rowID.should.eql(1);
-    }));
+    });
 
-    it('query in the middle of cursor iteration', mochaAsync(async () => {
+    it('query in the middle of cursor iteration', async () => {
       const {db} = context;
 
       for (let i = 0; i < 5; ++i) {
@@ -179,6 +172,6 @@ export default function models(driver, context, setup, teardown) {
           currentUser._age.should.eql(oldAge + 30);
         }
       });
-    }));
+    });
   });
 }

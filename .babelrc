@@ -1,3 +1,12 @@
 {
-  "presets": ["es2015-node5", "stage-1"]
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "node": "12"
+        }
+      }
+    ]
+  ]
 }

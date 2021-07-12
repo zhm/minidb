@@ -4,7 +4,7 @@ import path from 'path';
 import aspromised from 'chai-as-promised';
 
 import models from '../models';
-import {SQLite} from '../../src';
+import { SQLite } from '../../src';
 
 chai.use(aspromised);
 chai.should();
@@ -30,7 +30,7 @@ CREATE UNIQUE INDEX idx_user_email ON users (email);
 
 let context = { db: null };
 
-async function setup(done) {
+async function setup() {
   try {
     const file = path.join(__dirname, 'test.db');
 
@@ -50,23 +50,17 @@ async function setup(done) {
       }
     }
   } catch (ex) {
-    done(ex);
     throw ex;
   }
-
-  done();
 }
 
-async function teardown(done) {
+async function teardown() {
   try {
     await context.db.close();
     context.db = null;
   } catch (ex) {
-    done(ex);
     throw ex;
   }
-
-  done();
 }
 
 models('sqlite', context, setup, teardown);

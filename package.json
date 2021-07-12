@@ -1,6 +1,6 @@
 {
   "name": "minidb",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "description": "Mini ORM",
   "main": "dist/index.js",
   "repository": {
@@ -8,10 +8,10 @@
     "url": "git://github.com/zhm/minidb.git"
   },
   "scripts": {
-    "test": "node_modules/.bin/mocha ./test/setup.js test/sqlite/*.js test/postgres/*.js",
+    "test": "mocha ./test/setup.js test/sqlite/*.js test/postgres/*.js",
     "prepublish": "npm run clean && npm run build",
-    "lint": "node_modules/.bin/eslint src",
-    "build": "node_modules/.bin/babel src --out-dir dist --source-maps",
+    "lint": "eslint src",
+    "build": "babel src --out-dir dist --source-maps",
     "clean": "rm -rf dist"
   },
   "author": "Zac McCormick <zac.mccormick@gmail.com> (http://github.com/zhm)",
@@ -22,29 +22,28 @@
   "dependencies": {
     "bluebird": "^3.5.0",
     "humanize-duration": "^3.10.0",
-    "minipg": "^0.4.2",
+    "minipg": "^0.5.0",
     "minisqlite": "^2.1.1",
     "mixmatch": "^0.0.2",
     "pg": "^4.5.6",
     "pg-format": "^1.0.2"
   },
   "devDependencies": {
-    "babel-cli": "^6.9.0",
-    "babel-core": "^6.9.1",
-    "babel-eslint": "^6.0.4",
-    "babel-preset-es2015-node5": "^1.2.0",
-    "babel-preset-stage-1": "^6.5.0",
+    "@babel/cli": "^7.14.5",
+    "@babel/core": "^7.14.6",
+    "@babel/preset-env": "^7.14.7",
+    "@babel/register": "^7.14.5",
     "bignumber.js": "^5.0.0",
-    "chai": "^3.5.0",
-    "chai-as-promised": "^5.3.0",
-    "cson": "^3.0.2",
-    "eslint": "^2.11.1",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "cson": "^7.20.0",
+    "eslint": "^7.30.0",
     "eslint-config-fulcrum": "^1.0.2",
     "eslint-plugin-react": "^5.1.1",
-    "glob": "^7.0.3",
-    "mocha": "^2.5.3",
-    "rimraf": "^2.5.2",
-    "should": "^9.0.0",
-    "source-map-support": "^0.4.0"
+    "glob": "^7.1.7",
+    "mocha": "^9.0.2",
+    "rimraf": "^3.0.2",
+    "should": "^13.2.3",
+    "source-map-support": "^0.5.19"
   }
 }

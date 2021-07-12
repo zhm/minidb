@@ -2,7 +2,7 @@ import chai from 'chai';
 import aspromised from 'chai-as-promised';
 
 import models from '../models';
-import {Postgres} from '../../src';
+import { Postgres } from '../../src';
 import * as minipg from 'minipg';
 
 Postgres.driver = minipg;
@@ -31,7 +31,7 @@ CREATE UNIQUE INDEX idx_user_email ON users (email);
 
 let context = { db: null };
 
-async function setup(done) {
+async function setup() {
   try {
     context.db = new Postgres({db: 'dbname = minidb'});
 
@@ -41,16 +41,12 @@ async function setup(done) {
       }
     }
   } catch (ex) {
-    done(ex);
     throw ex;
   }
-
-  done();
 }
 
-async function teardown(done) {
+async function teardown() {
   context.db = null;
-  done();
 }
 
 models('postgres', context, setup, teardown);
