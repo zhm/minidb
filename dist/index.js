@@ -1,45 +1,64 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.MSSQL = exports.SQLite = exports.PostgresConnection = exports.Postgres = exports.PersistentObject = exports.DatabaseConnection = exports.Database = undefined;
+Object.defineProperty(exports, "Database", {
+  enumerable: true,
+  get: function () {
+    return _database.default;
+  }
+});
+Object.defineProperty(exports, "PersistentObject", {
+  enumerable: true,
+  get: function () {
+    return _persistentObject.default;
+  }
+});
+Object.defineProperty(exports, "Postgres", {
+  enumerable: true,
+  get: function () {
+    return _postgres.default;
+  }
+});
+Object.defineProperty(exports, "DatabaseConnection", {
+  enumerable: true,
+  get: function () {
+    return _databaseConnection.default;
+  }
+});
+Object.defineProperty(exports, "PostgresConnection", {
+  enumerable: true,
+  get: function () {
+    return _postgresConnection.default;
+  }
+});
+Object.defineProperty(exports, "SQLite", {
+  enumerable: true,
+  get: function () {
+    return _sqlite.default;
+  }
+});
+Object.defineProperty(exports, "MSSQL", {
+  enumerable: true,
+  get: function () {
+    return _mssql.default;
+  }
+});
 
-var _database = require('./database');
+var _database = _interopRequireDefault(require("./database"));
 
-var _database2 = _interopRequireDefault(_database);
+var _persistentObject = _interopRequireDefault(require("./persistent-object"));
 
-var _persistentObject = require('./persistent-object');
+var _postgres = _interopRequireDefault(require("./postgres"));
 
-var _persistentObject2 = _interopRequireDefault(_persistentObject);
+var _databaseConnection = _interopRequireDefault(require("./database-connection"));
 
-var _postgres = require('./postgres');
+var _postgresConnection = _interopRequireDefault(require("./postgres-connection"));
 
-var _postgres2 = _interopRequireDefault(_postgres);
+var _sqlite = _interopRequireDefault(require("./sqlite"));
 
-var _databaseConnection = require('./database-connection');
-
-var _databaseConnection2 = _interopRequireDefault(_databaseConnection);
-
-var _postgresConnection = require('./postgres-connection');
-
-var _postgresConnection2 = _interopRequireDefault(_postgresConnection);
-
-var _sqlite = require('./sqlite');
-
-var _sqlite2 = _interopRequireDefault(_sqlite);
-
-var _mssql = require('./mssql');
-
-var _mssql2 = _interopRequireDefault(_mssql);
+var _mssql = _interopRequireDefault(require("./mssql"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.Database = _database2.default;
-exports.DatabaseConnection = _databaseConnection2.default;
-exports.PersistentObject = _persistentObject2.default;
-exports.Postgres = _postgres2.default;
-exports.PostgresConnection = _postgresConnection2.default;
-exports.SQLite = _sqlite2.default;
-exports.MSSQL = _mssql2.default;
 //# sourceMappingURL=index.js.map

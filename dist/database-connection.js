@@ -3,35 +3,25 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-
-const POOLS = {};
-
-// Wrap a single connection w/ a query method in an async function.
+exports.default = void 0;
+const POOLS = {}; // Wrap a single connection w/ a query method in an async function.
 // This is used when we need to execute multiple successive queries and make sure
 // they're executed on the *same* connection and not separate connections
 // from the connection pool.
+
 class DatabaseConnection {
   constructor(pool, rawClient) {
     this.pool = pool;
     this.rawClient = rawClient;
   }
 
-  static pool(connectionString) {
-    // implement
+  static pool(connectionString) {// implement
   }
 
-  static connect(options) {
-    // implement
-
-    return _asyncToGenerator(function* () {})();
+  static async connect(options) {// implement
   }
 
-  query() {
-    // return new PostgresCursor(this, this.rawClient.query(...args));
+  query(...args) {// return new PostgresCursor(this, this.rawClient.query(...args));
   }
 
   close() {
@@ -39,32 +29,26 @@ class DatabaseConnection {
     this.rawClient = null;
   }
 
-  static _connect(ConnectionClass, options) {
-    return _asyncToGenerator(function* () {
-      return new Promise(function (resolve, reject) {
-        const pool = ConnectionClass.pool(options.db);
+  static async _connect(ConnectionClass, options) {
+    return new Promise((resolve, reject) => {
+      const pool = ConnectionClass.pool(options.db);
+      pool.acquire((err, client) => {
+        if (err) {
+          return reject(err);
+        }
 
-        pool.acquire(function (err, client) {
-          if (err) {
-            return reject(err);
-          }
-
-          return resolve(new ConnectionClass(pool, client));
-        });
+        return resolve(new ConnectionClass(pool, client));
       });
-    })();
+    });
   }
 
-  static _pool(createPool, connectionString) {
-    let poolOptions = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
+  static _pool(createPool, connectionString, poolOptions = {}) {
     let pool = POOLS[connectionString];
 
     if (pool == null) {
-      const params = _extends({}, poolOptions, {
+      const params = { ...poolOptions,
         db: connectionString
-      });
-
+      };
       pool = POOLS[connectionString] = createPool(params);
     }
 
@@ -82,6 +66,8 @@ class DatabaseConnection {
       }
     }
   }
+
 }
+
 exports.default = DatabaseConnection;
 //# sourceMappingURL=database-connection.js.map

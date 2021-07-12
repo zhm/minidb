@@ -1,41 +1,29 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+var _util = require("util");
 
-var _util = require('util');
+var _mixmatch = _interopRequireDefault(require("mixmatch"));
 
-var _mixmatch = require('mixmatch');
+var _assert = _interopRequireDefault(require("assert"));
 
-var _mixmatch2 = _interopRequireDefault(_mixmatch);
-
-var _assert = require('assert');
-
-var _assert2 = _interopRequireDefault(_assert);
-
-var _database = require('./database');
-
-var _database2 = _interopRequireDefault(_database);
+var _database = _interopRequireDefault(require("./database"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
-
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 const models = [];
 
 function checkDatabase(db) {
-  (0, _assert2.default)(db instanceof _database2.default, 'invalid db');
+  (0, _assert.default)(db instanceof _database.default, 'invalid db');
 }
 
-class PersistentObject extends _mixmatch2.default {
+class PersistentObject extends _mixmatch.default {
   constructor(db, attributes) {
     super();
-
     this.initializePersistentObject(db, attributes);
   }
 
@@ -49,142 +37,109 @@ class PersistentObject extends _mixmatch2.default {
 
   initializePersistentObject(db, attributes) {
     this._db = db;
-
     this.updateFromDatabaseAttributes(attributes || {}, db);
-
     return this;
   }
 
-  static findFirstColumns(ModelClass, db, attributes, columns) {
-    return _asyncToGenerator(function* () {
-      return yield db.findFirstByAttributes(ModelClass.tableName, columns, attributes);
-    })();
+  static async findFirstColumns(ModelClass, db, attributes, columns) {
+    return await db.findFirstByAttributes(ModelClass.tableName, columns, attributes);
   }
 
-  static findFirst(ModelClass, db, attributes) {
-    return _asyncToGenerator(function* () {
-      const row = yield db.findFirstByAttributes(ModelClass.tableName, null, attributes);
+  static async findFirst(ModelClass, db, attributes) {
+    const row = await db.findFirstByAttributes(ModelClass.tableName, null, attributes);
 
-      if (row) {
-        const instance = new ModelClass();
+    if (row) {
+      const instance = new ModelClass();
+      instance.initializePersistentObject(db, row);
+      return instance;
+    }
 
-        instance.initializePersistentObject(db, row);
-
-        return instance;
-      }
-
-      return null;
-    })();
+    return null;
   }
 
-  static findAllColumns(ModelClass, db, attributes, columns) {
-    return _asyncToGenerator(function* () {
-      return yield db.findAllByAttributes(ModelClass.tableName, columns, attributes);
-    })();
+  static async findAllColumns(ModelClass, db, attributes, columns) {
+    return await db.findAllByAttributes(ModelClass.tableName, columns, attributes);
   }
 
-  static findAllBySQL(ModelClass, db, sql, values) {
-    return _asyncToGenerator(function* () {
-      const rows = yield db.all(sql, values);
-
-      return rows.map(function (row) {
-        const instance = new ModelClass();
-
-        instance.initializePersistentObject(db, row);
-
-        return instance;
-      });
-    })();
+  static async findAllBySQL(ModelClass, db, sql, values) {
+    const rows = await db.all(sql, values);
+    return rows.map(row => {
+      const instance = new ModelClass();
+      instance.initializePersistentObject(db, row);
+      return instance;
+    });
   }
 
-  static findAll(ModelClass, db, attributes, orderBy) {
-    return _asyncToGenerator(function* () {
-      const rows = yield db.findAllByAttributes(ModelClass.tableName, null, attributes, orderBy);
-
-      return rows.map(function (row) {
-        const instance = new ModelClass();
-
-        instance.initializePersistentObject(db, row);
-
-        return instance;
-      });
-    })();
+  static async findAll(ModelClass, db, attributes, orderBy) {
+    const rows = await db.findAllByAttributes(ModelClass.tableName, null, attributes, orderBy);
+    return rows.map(row => {
+      const instance = new ModelClass();
+      instance.initializePersistentObject(db, row);
+      return instance;
+    });
   }
 
   static findEachBySQL(ModelClass, db, sql, params, callback) {
-    return db.each(sql, params, (() => {
-      var _ref = _asyncToGenerator(function* (_ref2) {
-        let columns = _ref2.columns,
-            values = _ref2.values,
-            index = _ref2.index;
+    return db.each(sql, params, async ({
+      columns,
+      values,
+      index
+    }) => {
+      if (values) {
+        const instance = new ModelClass();
+        instance.initializePersistentObject(db, values);
+        return await callback(instance, {
+          columns,
+          values,
+          index
+        });
+      }
 
-        if (values) {
-          const instance = new ModelClass();
-
-          instance.initializePersistentObject(db, values);
-
-          return yield callback(instance, { columns: columns, values: values, index: index });
-        }
-
-        return null;
-      });
-
-      return function (_x) {
-        return _ref.apply(this, arguments);
-      };
-    })());
+      return null;
+    });
   }
 
   static findEach(ModelClass, db, options, callback) {
-    return db.findEachByAttributes(_extends({ tableName: ModelClass.tableName }, options), (() => {
-      var _ref3 = _asyncToGenerator(function* (_ref4) {
-        let columns = _ref4.columns,
-            values = _ref4.values,
-            index = _ref4.index;
+    return db.findEachByAttributes({
+      tableName: ModelClass.tableName,
+      ...options
+    }, async ({
+      columns,
+      values,
+      index
+    }) => {
+      if (values) {
+        const instance = new ModelClass();
+        instance.initializePersistentObject(db, values);
+        return await callback(instance, {
+          columns,
+          values,
+          index
+        });
+      }
 
-        if (values) {
-          const instance = new ModelClass();
-
-          instance.initializePersistentObject(db, values);
-
-          return yield callback(instance, { columns: columns, values: values, index: index });
-        }
-
-        return null;
-      });
-
-      return function (_x2) {
-        return _ref3.apply(this, arguments);
-      };
-    })());
+      return null;
+    });
   }
 
-  static findOrCreate(ModelClass, db, attributes) {
-    return _asyncToGenerator(function* () {
-      const row = yield db.findFirstByAttributes(ModelClass.tableName, null, attributes);
-
-      const instance = new ModelClass();
-
-      instance.initializePersistentObject(db, _extends({}, row, attributes));
-
-      return instance;
-    })();
+  static async findOrCreate(ModelClass, db, attributes) {
+    const row = await db.findFirstByAttributes(ModelClass.tableName, null, attributes);
+    const instance = new ModelClass();
+    instance.initializePersistentObject(db, { ...row,
+      ...attributes
+    });
+    return instance;
   }
 
   static create(ModelClass, db, attributes) {
     const instance = new ModelClass();
-
     instance.initializePersistentObject(db, attributes);
-
     return instance;
   }
 
-  static count(ModelClass, db, attributes) {
-    return _asyncToGenerator(function* () {
-      const result = yield db.findFirstByAttributes(ModelClass.tableName, ['COUNT(1) AS count'], attributes);
-
-      return result.count;
-    })();
+  static async count(ModelClass, db, attributes) {
+    const result = await db.findFirstByAttributes(ModelClass.tableName, ['COUNT(1) AS count'], attributes);
+    return result.count;
   }
 
   static get modelMethods() {
@@ -197,15 +152,10 @@ class PersistentObject extends _mixmatch2.default {
 
   static register(modelClass) {
     models.push(modelClass);
-
     PersistentObject.includeInto(modelClass);
 
     const wrap = method => {
-      return function () {
-        for (var _len = arguments.length, params = Array(_len), _key = 0; _key < _len; _key++) {
-          params[_key] = arguments[_key];
-        }
-
+      return (...params) => {
         const args = [modelClass].concat(params);
         return PersistentObject[method].apply(PersistentObject, args);
       };
@@ -218,12 +168,15 @@ class PersistentObject extends _mixmatch2.default {
     for (const column of modelClass.columns) {
       if (column.simple) {
         const varName = '_' + column.name;
-
-        const customType = _database2.default.CUSTOM_TYPES[column.type];
-
-        const customGetter = customType && customType.getter ? customType.getter({ varName: varName, column: column }) : null;
-        const customSetter = customType && customType.setter ? customType.setter({ varName: varName, column: column }) : null;
-
+        const customType = _database.default.CUSTOM_TYPES[column.type];
+        const customGetter = customType && customType.getter ? customType.getter({
+          varName,
+          column
+        }) : null;
+        const customSetter = customType && customType.setter ? customType.setter({
+          varName,
+          column
+        }) : null;
         Object.defineProperty(modelClass.prototype, column.name, {
           get: customGetter || function getter() {
             return this[varName];
@@ -271,6 +224,7 @@ class PersistentObject extends _mixmatch2.default {
     if (!this.constructor._columnsByColumnName) {
       this._buildColumns();
     }
+
     return this.constructor._columnsByColumnName;
   }
 
@@ -278,6 +232,7 @@ class PersistentObject extends _mixmatch2.default {
     if (!this.constructor._columnsByAttributeName) {
       this._buildColumns();
     }
+
     return this.constructor._columnsByAttributeName;
   }
 
@@ -287,12 +242,10 @@ class PersistentObject extends _mixmatch2.default {
 
   _updateFromDatabaseAttributes(attributes, db) {
     db = db || this.db;
-
     checkDatabase(db);
 
     for (const key of Object.keys(attributes)) {
       const column = this.columnsByColumnName[key];
-
       const value = column && db.fromDatabase(attributes[column.column], column);
 
       if (column && column.simple) {
@@ -300,14 +253,16 @@ class PersistentObject extends _mixmatch2.default {
         this[column.name] = value;
       } else if (column) {
         this['_' + column.name] = value;
-      } else if (key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
-        // throw new Error(format("column definition for '%s' does not exist", key));
+      } else if (key !== 'id' && key !== 'created_at' && key !== 'updated_at') {// throw new Error(format("column definition for '%s' does not exist", key));
       }
     }
 
-    this.objectCreatedAt = db.fromDatabase(attributes.created_at, { type: 'datetime' });
-    this.objectUpdatedAt = db.fromDatabase(attributes.updated_at, { type: 'datetime' });
-
+    this.objectCreatedAt = db.fromDatabase(attributes.created_at, {
+      type: 'datetime'
+    });
+    this.objectUpdatedAt = db.fromDatabase(attributes.updated_at, {
+      type: 'datetime'
+    });
     this._rowID = this.toNumber(attributes.id);
   }
 
@@ -316,7 +271,6 @@ class PersistentObject extends _mixmatch2.default {
 
     for (const column of this.constructor.columns) {
       const name = column.name;
-
       values['_' + name] = this['_' + name];
     }
 
@@ -325,16 +279,12 @@ class PersistentObject extends _mixmatch2.default {
 
   databaseValues(db) {
     db = db || this.db;
-
     checkDatabase(db);
-
     const values = {};
 
     for (const column of this.constructor.columns) {
       const name = column.name;
-      const value = this['_' + name];
-
-      // TODO(zhm) this doesn't work with the id attribute
+      const value = this['_' + name]; // TODO(zhm) this doesn't work with the id attribute
       // if (value == null && column.null === false) {
       //   throw Error(format('column %s cannot be null', name));
       // }
@@ -379,114 +329,116 @@ class PersistentObject extends _mixmatch2.default {
     return this.rowID > 0;
   }
 
-  save() {
-    var _this = this;
+  async save({
+    db,
+    timestamps,
+    ...rest
+  } = {}) {
+    db = db || this.db;
+    checkDatabase(db);
 
-    let _ref5 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    if (this.beforeSave) {
+      const result = await this.beforeSave({
+        db,
+        timestamps,
+        ...rest
+      });
 
-    let db = _ref5.db,
-        timestamps = _ref5.timestamps,
-        rest = _objectWithoutProperties(_ref5, ['db', 'timestamps']);
+      if (result === false) {
+        return this;
+      }
+    }
 
-    return _asyncToGenerator(function* () {
-      db = db || _this.db;
+    if (timestamps !== false) {
+      this.updateTimestamps();
+    }
 
-      checkDatabase(db);
+    const values = this.databaseValues(db);
+    values.created_at = db.toDatabase(this.objectCreatedAt, {
+      type: 'datetime'
+    });
+    values.updated_at = db.toDatabase(this.objectUpdatedAt, {
+      type: 'datetime'
+    });
 
-      if (_this.beforeSave) {
-        const result = yield _this.beforeSave(_extends({ db: db, timestamps: timestamps }, rest));
+    if (!this.isPersisted) {
+      this._rowID = await db.insert(this.constructor.tableName, values, {
+        pk: 'id'
+      });
+    } else {
+      await db.update(this.constructor.tableName, {
+        id: this.rowID
+      }, values);
+    }
+
+    if (this.afterSave) {
+      await this.afterSave({
+        db,
+        timestamps,
+        ...rest
+      });
+    }
+
+    return this;
+  }
+
+  async delete({
+    db,
+    ...rest
+  } = {}) {
+    db = db || this.db;
+    checkDatabase(db);
+
+    if (this.isPersisted) {
+      if (this.beforeDelete) {
+        const result = await this.beforeDelete({
+          db,
+          ...rest
+        });
 
         if (result === false) {
-          return _this;
+          return this;
         }
       }
 
-      if (timestamps !== false) {
-        _this.updateTimestamps();
+      await db.delete(this.constructor.tableName, {
+        id: this.rowID
+      });
+
+      if (this.afterDelete) {
+        await this.afterDelete({
+          db,
+          ...rest
+        });
       }
 
-      const values = _this.databaseValues(db);
+      this._rowID = null;
+      this.objectCreatedAt = null;
+      this.objectUpdatedAt = null;
+    }
 
-      values.created_at = db.toDatabase(_this.objectCreatedAt, { type: 'datetime' });
-      values.updated_at = db.toDatabase(_this.objectUpdatedAt, { type: 'datetime' });
-
-      if (!_this.isPersisted) {
-        _this._rowID = yield db.insert(_this.constructor.tableName, values, { pk: 'id' });
-      } else {
-        yield db.update(_this.constructor.tableName, { id: _this.rowID }, values);
-      }
-
-      if (_this.afterSave) {
-        yield _this.afterSave(_extends({ db: db, timestamps: timestamps }, rest));
-      }
-
-      return _this;
-    })();
+    return this;
   }
 
-  delete() {
-    var _this2 = this;
+  async loadOne(name, model, id, db) {
+    db = db || this.db;
+    checkDatabase(db);
+    const ivar = '_' + name;
+    const pk = id || this[ivar + 'RowID'];
 
-    let _ref6 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    if (pk == null) {
+      return null;
+    }
 
-    let db = _ref6.db,
-        rest = _objectWithoutProperties(_ref6, ['db']);
+    if (this[ivar]) {
+      return this[ivar];
+    }
 
-    return _asyncToGenerator(function* () {
-      db = db || _this2.db;
-
-      checkDatabase(db);
-
-      if (_this2.isPersisted) {
-        if (_this2.beforeDelete) {
-          const result = yield _this2.beforeDelete(_extends({ db: db }, rest));
-
-          if (result === false) {
-            return _this2;
-          }
-        }
-
-        yield db.delete(_this2.constructor.tableName, { id: _this2.rowID });
-
-        if (_this2.afterDelete) {
-          yield _this2.afterDelete(_extends({ db: db }, rest));
-        }
-
-        _this2._rowID = null;
-        _this2.objectCreatedAt = null;
-        _this2.objectUpdatedAt = null;
-      }
-
-      return _this2;
-    })();
-  }
-
-  loadOne(name, model, id, db) {
-    var _this3 = this;
-
-    return _asyncToGenerator(function* () {
-      db = db || _this3.db;
-
-      checkDatabase(db);
-
-      const ivar = '_' + name;
-
-      const pk = id || _this3[ivar + 'RowID'];
-
-      if (pk == null) {
-        return null;
-      }
-
-      if (_this3[ivar]) {
-        return _this3[ivar];
-      }
-
-      const instance = yield model.findFirst(db, { id: pk });
-
-      _this3.setOne(name, instance);
-
-      return _this3[ivar];
-    })();
+    const instance = await model.findFirst(db, {
+      id: pk
+    });
+    this.setOne(name, instance);
+    return this[ivar];
   }
 
   setOne(name, instance) {
@@ -502,6 +454,8 @@ class PersistentObject extends _mixmatch2.default {
       this[ivar + 'RowID'] = null;
     }
   }
+
 }
+
 exports.default = PersistentObject;
 //# sourceMappingURL=persistent-object.js.map

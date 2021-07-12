@@ -1,26 +1,21 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+var _util = require("util");
 
-var _util = require('util');
+var _esc = _interopRequireDefault(require("./esc"));
 
-var _esc = require('./esc');
-
-var _esc2 = _interopRequireDefault(_esc);
-
-var _humanizeDuration = require('humanize-duration');
-
-var _humanizeDuration2 = _interopRequireDefault(_humanizeDuration);
+var _humanizeDuration = _interopRequireDefault(require("humanize-duration"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-const shortEnglishHumanizer = _humanizeDuration2.default.humanizer({
+const shortEnglishHumanizer = _humanizeDuration.default.humanizer({
   language: 'shortEn',
   languages: {
     shortEn: {
@@ -30,7 +25,6 @@ const shortEnglishHumanizer = _humanizeDuration2.default.humanizer({
 });
 
 class Database {
-
   constructor(options) {
     this.options = options;
   }
@@ -44,83 +38,68 @@ class Database {
   }
 
   get verbose() {
-    return false;
-    // return true;
+    return false; // return true;
   }
 
-  log(message) {
-    // if (Database.debug) {
+  log(message) {// if (Database.debug) {
     //   console.warn('[SQL]', message);
     // }
   }
 
-  static measure(text, block) {
-    return _asyncToGenerator(function* () {
-      if (!Database.debug) {
-        return yield block();
-      }
+  static async measure(text, block) {
+    if (!Database.debug) {
+      return await block();
+    }
 
-      const start = new Date().getTime();
+    const start = new Date().getTime();
+    let result = null;
+    let error = null;
 
-      let result = null;
-      let error = null;
+    try {
+      result = await block();
+    } catch (ex) {
+      error = ex;
+    }
 
-      try {
-        result = yield block();
-      } catch (ex) {
-        error = ex;
-      }
+    const total = new Date().getTime() - start;
+    console.log('[SQL][' + shortEnglishHumanizer(total, {
+      spacer: '',
+      units: ['ms']
+    }) + ']' + (error ? '[ERROR] ' : ' ') + text);
 
-      const total = new Date().getTime() - start;
+    if (error) {
+      throw error;
+    }
 
-      console.log('[SQL][' + shortEnglishHumanizer(total, { spacer: '', units: ['ms'] }) + ']' + (error ? '[ERROR] ' : ' ') + text);
-
-      if (error) {
-        throw error;
-      }
-
-      return result;
-    })();
+    return result;
   }
 
   ident(value) {
-    return (0, _esc2.default)(value, '`');
+    return (0, _esc.default)(value, '`');
   }
 
   literal(value) {
-    return (0, _esc2.default)(value, "'");
+    return (0, _esc.default)(value, "'");
   }
 
-  open() {
-    return _asyncToGenerator(function* () {
-      return null;
-    })();
+  async open() {
+    return null;
   }
 
-  close() {
-    return _asyncToGenerator(function* () {
-      return null;
-    })();
+  async close() {
+    return null;
   }
 
-  each(sql, params, callback) {
-    var _this = this;
-
-    return _asyncToGenerator(function* () {
-      return yield Database.measure(sql, _asyncToGenerator(function* () {
-        return yield _this._each(sql, params, callback);
-      }));
-    })();
+  async each(sql, params, callback) {
+    return await Database.measure(sql, async () => {
+      return await this._each(sql, params, callback);
+    });
   }
 
-  execute(sql, params) {
-    var _this2 = this;
-
-    return _asyncToGenerator(function* () {
-      return yield Database.measure(sql, _asyncToGenerator(function* () {
-        return yield _this2._execute(sql, params);
-      }));
-    })();
+  async execute(sql, params) {
+    return await Database.measure(sql, async () => {
+      return await this._execute(sql, params);
+    });
   }
 
   beginTransaction() {
@@ -135,63 +114,47 @@ class Database {
     return this.execute('ROLLBACK TRANSACTION;');
   }
 
-  transaction(block) {
-    var _this3 = this;
+  async transaction(block) {
+    await this.beginTransaction();
 
-    return _asyncToGenerator(function* () {
-      yield _this3.beginTransaction();
+    try {
+      await block(this);
+      await this.commit();
+    } catch (ex) {
+      console.log('ERROR IN TRANSACTION', ex);
+      await this.rollback();
+      throw ex;
+    }
+  }
 
-      try {
-        yield block(_this3);
-        yield _this3.commit();
-      } catch (ex) {
-        console.log('ERROR IN TRANSACTION', ex);
-        yield _this3.rollback();
-        throw ex;
+  async all(sql, params) {
+    const rows = [];
+    await this.each(sql, params, ({
+      columns,
+      values,
+      index,
+      cursor
+    }) => {
+      if (values) {
+        rows.push(values);
       }
-    })();
+    });
+    return rows;
   }
 
-  all(sql, params) {
-    var _this4 = this;
-
-    return _asyncToGenerator(function* () {
-      const rows = [];
-
-      yield _this4.each(sql, params, function (_ref3) {
-        let columns = _ref3.columns,
-            values = _ref3.values,
-            index = _ref3.index,
-            cursor = _ref3.cursor;
-
-        if (values) {
-          rows.push(values);
-        }
-      });
-
-      return rows;
-    })();
-  }
-
-  get(sql, params) {
-    var _this5 = this;
-
-    return _asyncToGenerator(function* () {
-      const rows = [];
-
-      yield _this5.each(sql, params, function (_ref4) {
-        let columns = _ref4.columns,
-            values = _ref4.values,
-            index = _ref4.index,
-            cursor = _ref4.cursor;
-
-        if (values) {
-          rows.push(values);
-        }
-      });
-
-      return rows.length ? rows[0] : null;
-    })();
+  async get(sql, params) {
+    const rows = [];
+    await this.each(sql, params, ({
+      columns,
+      values,
+      index,
+      cursor
+    }) => {
+      if (values) {
+        rows.push(values);
+      }
+    });
+    return rows.length ? rows[0] : null;
   }
 
   buildWhere(where) {
@@ -222,7 +185,6 @@ class Database {
     for (const key of Object.keys(attributes)) {
       names.push(this.ident(key));
       placeholders.push('?');
-
       const value = attributes[key];
 
       if (Array.isArray(value)) {
@@ -241,7 +203,6 @@ class Database {
 
     for (const name of Object.keys(attributes)) {
       sets.push(this.ident(name) + ' = ?');
-
       const value = attributes[name];
 
       if (Array.isArray(value)) {
@@ -256,24 +217,17 @@ class Database {
 
   findEachByAttributes(options, callback) {
     const statement = this.findStatement(options.tableName, options.columns, options.where, options.orderBy, options.limit, options.offset);
-
     return this.each(statement.sql, statement.values, callback);
   }
 
   findAllByAttributes(tableName, columns, where, orderBy, limit, offset) {
     const statement = this.findStatement(tableName, columns, where, orderBy, limit, offset);
-
     return this.all(statement.sql, statement.values);
   }
 
-  findFirstByAttributes(tableName, columns, attributes, orderBy) {
-    var _this6 = this;
-
-    return _asyncToGenerator(function* () {
-      const rows = yield _this6.findAllByAttributes(tableName, columns, attributes, orderBy, 1);
-
-      return rows != null ? rows[0] : null;
-    })();
+  async findFirstByAttributes(tableName, columns, attributes, orderBy) {
+    const rows = await this.findAllByAttributes(tableName, columns, attributes, orderBy, 1);
+    return rows != null ? rows[0] : null;
   }
 
   trace() {
@@ -286,14 +240,7 @@ class Database {
 
   findStatement(tableName, columns, where, orderBy, limit, offset) {
     const selection = columns == null ? ['*'] : columns;
-
-    var _buildWhere = this.buildWhere(where),
-        _buildWhere2 = _slicedToArray(_buildWhere, 2);
-
-    const clause = _buildWhere2[0],
-          values = _buildWhere2[1];
-
-
+    const [clause, values] = this.buildWhere(where);
     const parts = [];
 
     if (clause.length > 0) {
@@ -313,34 +260,24 @@ class Database {
     }
 
     const sql = (0, _util.format)('SELECT %s FROM %s%s', selection.join(', '), this.ident(tableName), parts.join(''));
-
-    return { sql: sql, values: values };
+    return {
+      sql,
+      values
+    };
   }
 
   insertStatement(table, attributes) {
-    var _buildInsert = this.buildInsert(attributes),
-        _buildInsert2 = _slicedToArray(_buildInsert, 3);
-
-    const names = _buildInsert2[0],
-          placeholders = _buildInsert2[1],
-          values = _buildInsert2[2];
-
-
+    const [names, placeholders, values] = this.buildInsert(attributes);
     const sql = (0, _util.format)('INSERT INTO %s (%s)\nVALUES (%s);', table, names.join(', '), placeholders.join(', '));
-
-    return { sql: sql, values: values };
+    return {
+      sql,
+      values
+    };
   }
 
   updateStatement(table, where, attributes, options) {
     const values = [];
-
-    var _buildUpdate = this.buildUpdate(attributes),
-        _buildUpdate2 = _slicedToArray(_buildUpdate, 2);
-
-    const sets = _buildUpdate2[0],
-          updateValues = _buildUpdate2[1];
-
-
+    const [sets, updateValues] = this.buildUpdate(attributes);
     values.push.apply(values, updateValues);
 
     if (options && options.raw) {
@@ -349,71 +286,42 @@ class Database {
       }
     }
 
-    var _buildWhere3 = this.buildWhere(where),
-        _buildWhere4 = _slicedToArray(_buildWhere3, 2);
-
-    const clause = _buildWhere4[0],
-          whereValues = _buildWhere4[1];
-
-
+    const [clause, whereValues] = this.buildWhere(where);
     values.push.apply(values, whereValues);
-
     const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
-
     const sql = (0, _util.format)('UPDATE %s SET %s%s;', table, sets.join(', '), whereClause);
-
-    return { sql: sql, values: values };
+    return {
+      sql,
+      values
+    };
   }
 
   deleteStatement(table, where) {
-    var _buildWhere5 = this.buildWhere(where),
-        _buildWhere6 = _slicedToArray(_buildWhere5, 2);
-
-    const clause = _buildWhere6[0],
-          values = _buildWhere6[1];
-
-
+    const [clause, values] = this.buildWhere(where);
     const whereClause = clause.length ? ' WHERE ' + clause.join(' AND ') : '';
-
     const sql = (0, _util.format)('DELETE FROM %s%s;', table, whereClause);
-
-    return { sql: sql, values: values };
+    return {
+      sql,
+      values
+    };
   }
 
-  insert(table, attributes, options) {
-    var _this7 = this;
-
-    return _asyncToGenerator(function* () {
-      const statement = _this7.insertStatement(table, attributes);
-
-      yield _this7.execute(statement.sql, statement.values);
-
-      return _this7.lastID;
-    })();
+  async insert(table, attributes, options) {
+    const statement = this.insertStatement(table, attributes);
+    await this.execute(statement.sql, statement.values);
+    return this.lastID;
   }
 
-  update(table, where, attributes, options) {
-    var _this8 = this;
-
-    return _asyncToGenerator(function* () {
-      const statement = _this8.updateStatement(table, where, attributes, options);
-
-      yield _this8.execute(statement.sql, statement.values);
-
-      return null;
-    })();
+  async update(table, where, attributes, options) {
+    const statement = this.updateStatement(table, where, attributes, options);
+    await this.execute(statement.sql, statement.values);
+    return null;
   }
 
-  delete(table, where, options) {
-    var _this9 = this;
-
-    return _asyncToGenerator(function* () {
-      const statement = _this9.deleteStatement(table, where);
-
-      yield _this9.execute(statement.sql, statement.values);
-
-      return null;
-    })();
+  async delete(table, where, options) {
+    const statement = this.deleteStatement(table, where);
+    await this.execute(statement.sql, statement.values);
+    return null;
   }
 
   toDatabase(value, column) {
@@ -481,7 +389,10 @@ class Database {
         return value.toString();
     }
   }
+
 }
+
 exports.default = Database;
-Database.CUSTOM_TYPES = {};
+
+_defineProperty(Database, "CUSTOM_TYPES", {});
 //# sourceMappingURL=database.js.map

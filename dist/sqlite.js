@@ -1,34 +1,23 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+var _pgFormat = _interopRequireDefault(require("pg-format"));
 
-var _pgFormat = require('pg-format');
+var _util = require("util");
 
-var _pgFormat2 = _interopRequireDefault(_pgFormat);
+var _esc = _interopRequireDefault(require("./esc"));
 
-var _util = require('util');
+var _database = _interopRequireDefault(require("./database"));
 
-var _esc = require('./esc');
+var _databaseCursor = _interopRequireDefault(require("./database-cursor"));
 
-var _esc2 = _interopRequireDefault(_esc);
-
-var _database = require('./database');
-
-var _database2 = _interopRequireDefault(_database);
-
-var _databaseCursor = require('./database-cursor');
-
-var _databaseCursor2 = _interopRequireDefault(_databaseCursor);
-
-var _minisqlite = require('minisqlite');
+var _minisqlite = require("minisqlite");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 function quoteLiteral(value) {
   let stringValue = null;
@@ -68,178 +57,150 @@ function quoteLiteral(value) {
   }
 
   result += "'";
-
   return result;
 }
 
-class SQLite extends _database2.default {
-  open(_ref) {
-    let file = _ref.file,
-        flags = _ref.flags;
-    return _asyncToGenerator(function* () {
-      return new Promise(function (resolve, reject) {
-        const database = new _minisqlite.Database();
+class SQLite extends _database.default {
+  async open({
+    file,
+    flags
+  }) {
+    return new Promise((resolve, reject) => {
+      const database = new _minisqlite.Database();
+      database.open(file, flags, null, (err, db) => {
+        if (err) {
+          return reject(db ? db.lastError : err);
+        }
 
-        database.open(file, flags, null, function (err, db) {
-          if (err) {
-            return reject(db ? db.lastError : err);
-          }
-
-          return resolve(db);
-        });
+        return resolve(db);
       });
-    })();
+    });
   }
 
-  setup() {
-    var _this = this;
+  async setup() {
+    if (!this.database) {
+      this.database = await this.open(this.options);
+    }
 
-    return _asyncToGenerator(function* () {
-      if (!_this.database) {
-        _this.database = yield _this.open(_this.options);
-      }
+    if (this.options.wal) {
+      await this.execute('PRAGMA journal_mode=WAL');
+    }
 
-      if (_this.options.wal) {
-        yield _this.execute('PRAGMA journal_mode=WAL');
-      }
+    if (this.options.autoVacuum) {
+      await this.execute('PRAGMA auto_vacuum=INCREMENTAL');
+    }
 
-      if (_this.options.autoVacuum) {
-        yield _this.execute('PRAGMA auto_vacuum=INCREMENTAL');
-      }
-
-      if (_this.options.synchronous) {
-        yield _this.execute('PRAGMA synchronous=' + _this.options.synchronous.toUpperCase());
-      }
-    })();
+    if (this.options.synchronous) {
+      await this.execute('PRAGMA synchronous=' + this.options.synchronous.toUpperCase());
+    }
   }
 
   ident(value) {
-    return (0, _esc2.default)(value, '"');
+    return (0, _esc.default)(value, '"');
   }
 
-  static open(options) {
-    return _asyncToGenerator(function* () {
-      const db = new SQLite(options);
-      yield db.setup();
-      return db;
-    })();
+  static async open(options) {
+    const db = new SQLite(options);
+    await db.setup();
+    return db;
   }
 
   get dialect() {
     return 'sqlite';
   }
 
-  _each(sql, params, callback) {
-    var _this2 = this;
+  async _each(sql, params, callback) {
+    this.log(sql);
+    const database = this.database;
+    let cursor = null;
 
-    return _asyncToGenerator(function* () {
-      _this2.log(sql);
+    try {
+      cursor = this.query(sql);
 
-      const database = _this2.database;
-      let cursor = null;
+      while (cursor.hasRows) {
+        const result = await cursor.next();
 
-      try {
-        cursor = _this2.query(sql);
-
-        while (cursor.hasRows) {
-          const result = yield cursor.next();
-
-          if (result && callback) {
-            /* eslint-disable callback-return */
-            yield callback({ columns: result.columns, values: result.values, index: result.index, cursor: cursor });
-            /* eslint-enable callback-return */
-          }
-        }
-      } catch (ex) {
-        if (_this2.verbose) {
-          console.error('ERROR', ex);
-        }
-
-        throw ex;
-      } finally {
-        _this2._lastInsertID = database.lastInsertID;
-
-        if (cursor) {
-          try {
-            yield cursor.close();
-          } catch (err) {
-            // Closing the cursor on a connection where there was a previous error rethrows the same error
-            // This is because pumping the cursor to completion ends up carrying the original error to
-            // the end. This is desired behavior, we just have to swallow any potential errors here.
-          }
+        if (result && callback) {
+          /* eslint-disable callback-return */
+          await callback({
+            columns: result.columns,
+            values: result.values,
+            index: result.index,
+            cursor
+          });
+          /* eslint-enable callback-return */
         }
       }
-    })();
-  }
-
-  close() {
-    var _this3 = this;
-
-    return _asyncToGenerator(function* () {
-      if (_this3.database) {
-        yield _this3.database.close();
-        _this3.database = null;
+    } catch (ex) {
+      if (this.verbose) {
+        console.error('ERROR', ex);
       }
-    })();
-  }
 
-  _execute(sql, params) {
-    var _this4 = this;
+      throw ex;
+    } finally {
+      this._lastInsertID = database.lastInsertID;
 
-    return _asyncToGenerator(function* () {
-      let resultColumns = null;
-      const rows = [];
-
-      yield _this4._each(sql, [], (() => {
-        var _ref2 = _asyncToGenerator(function* (_ref3) {
-          let columns = _ref3.columns,
-              values = _ref3.values,
-              index = _ref3.index;
-
-          if (resultColumns == null) {
-            resultColumns = columns;
-          }
-
-          if (values) {
-            rows.push(values);
-          }
-        });
-
-        return function (_x) {
-          return _ref2.apply(this, arguments);
-        };
-      })());
-
-      return { rows: rows, columns: resultColumns };
-    })();
-  }
-
-  query() {
-    return new _databaseCursor2.default(this, this.database.query(...arguments));
-  }
-
-  transaction(block) {
-    var _this5 = this;
-
-    return _asyncToGenerator(function* () {
-      yield _this5.beginTransaction();
-
-      try {
-        yield block(_this5);
-        yield _this5.commit();
-      } catch (ex) {
+      if (cursor) {
         try {
-          yield _this5.rollback();
-        } catch (rollbackError) {
-          // await this.close();
-          throw rollbackError;
+          await cursor.close();
+        } catch (err) {// Closing the cursor on a connection where there was a previous error rethrows the same error
+          // This is because pumping the cursor to completion ends up carrying the original error to
+          // the end. This is desired behavior, we just have to swallow any potential errors here.
         }
-
-        throw ex;
-      } finally {
-        // await this.close();
       }
-    })();
+    }
+  }
+
+  async close() {
+    if (this.database) {
+      await this.database.close();
+      this.database = null;
+    }
+  }
+
+  async _execute(sql, params) {
+    let resultColumns = null;
+    const rows = [];
+    await this._each(sql, [], async ({
+      columns,
+      values,
+      index
+    }) => {
+      if (resultColumns == null) {
+        resultColumns = columns;
+      }
+
+      if (values) {
+        rows.push(values);
+      }
+    });
+    return {
+      rows: rows,
+      columns: resultColumns
+    };
+  }
+
+  query(...args) {
+    return new _databaseCursor.default(this, this.database.query(...args));
+  }
+
+  async transaction(block) {
+    await this.beginTransaction();
+
+    try {
+      await block(this);
+      await this.commit();
+    } catch (ex) {
+      try {
+        await this.rollback();
+      } catch (rollbackError) {
+        // await this.close();
+        throw rollbackError;
+      }
+
+      throw ex;
+    } finally {// await this.close();
+    }
   }
 
   arrayFormatString(array) {
@@ -261,11 +222,11 @@ class SQLite extends _database2.default {
         const columnName = '`' + key + '`';
 
         if (value == null) {
-          clause.push((0, _pgFormat2.default)('%s IS NULL', columnName));
+          clause.push((0, _pgFormat.default)('%s IS NULL', columnName));
         } else if (Array.isArray(value)) {
-          clause.push((0, _pgFormat2.default)('%s = ANY (' + this.arrayFormatString(where[key]) + ')', columnName, value));
+          clause.push((0, _pgFormat.default)('%s = ANY (' + this.arrayFormatString(where[key]) + ')', columnName, value));
         } else {
-          clause.push((0, _pgFormat2.default)('%s = %s', columnName, quoteLiteral(where[key])));
+          clause.push((0, _pgFormat.default)('%s = %s', columnName, quoteLiteral(where[key])));
         }
       }
     }
@@ -273,17 +234,14 @@ class SQLite extends _database2.default {
     return [clause, []];
   }
 
-  buildInsert(attributes) {
-    let includeNames = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
+  buildInsert(attributes, includeNames = true) {
     const names = [];
     const values = [];
-    const placeholders = [];
-
-    // Use the literal values instead of placeholders  because parameterized
+    const placeholders = []; // Use the literal values instead of placeholders  because parameterized
     // queries require prepared statements. Prepared statements are stateful
     // and impose requirements on the connection that are incompatible with
     // pgbouncer.
+
     for (const key of Object.keys(attributes)) {
       if (includeNames) {
         names.push('`' + key + '`');
@@ -292,7 +250,7 @@ class SQLite extends _database2.default {
       const value = attributes[key];
 
       if (value && value.raw) {
-        placeholders.push((0, _pgFormat2.default)('%s', value.raw));
+        placeholders.push((0, _pgFormat.default)('%s', value.raw));
       } else {
         placeholders.push(quoteLiteral(value));
       }
@@ -309,9 +267,9 @@ class SQLite extends _database2.default {
       const value = attributes[key];
 
       if (value && value.raw) {
-        sets.push((0, _pgFormat2.default)('%s = %s', '`' + key + '`', value.raw));
+        sets.push((0, _pgFormat.default)('%s = %s', '`' + key + '`', value.raw));
       } else {
-        sets.push((0, _pgFormat2.default)('%s = %s', '`' + key + '`', quoteLiteral(value)));
+        sets.push((0, _pgFormat.default)('%s = %s', '`' + key + '`', quoteLiteral(value)));
       }
     }
 
@@ -322,25 +280,17 @@ class SQLite extends _database2.default {
     // if (options == null) {
     //   throw new Error('options not given');
     // }
-
-    var _buildInsert = this.buildInsert(attributes),
-        _buildInsert2 = _slicedToArray(_buildInsert, 3);
-
-    const names = _buildInsert2[0],
-          placeholders = _buildInsert2[1],
-          values = _buildInsert2[2];
-
-
+    const [names, placeholders, values] = this.buildInsert(attributes);
     const returning = '';
-
     const sql = (0, _util.format)('INSERT INTO %s (%s)\nVALUES (%s)%s;', table, names.join(', '), placeholders.join(', '), returning);
-
-    return { sql: sql, values: values };
+    return {
+      sql,
+      values
+    };
   }
 
   insertStatements(table, arrayOfAttributes, options) {
     const arrayOfValues = [];
-
     let names = null;
 
     for (const attributes of arrayOfAttributes) {
@@ -354,22 +304,17 @@ class SQLite extends _database2.default {
     }
 
     const sql = (0, _util.format)('INSERT INTO %s (%s)\nVALUES %s;', table, names.join(', '), arrayOfValues.join(',\n'));
-
-    return { sql: sql, values: {} };
+    return {
+      sql,
+      values: {}
+    };
   }
 
-  insert(table, attributes, options) {
-    var _this6 = this;
+  async insert(table, attributes, options) {
+    const statement = this.insertStatement(table, attributes, options);
+    const result = await this.all(statement.sql, statement.values); // TODO(zhm) broken
 
-    return _asyncToGenerator(function* () {
-      const statement = _this6.insertStatement(table, attributes, options);
-
-      const result = yield _this6.all(statement.sql, statement.values);
-
-      // TODO(zhm) broken
-      return _this6._lastInsertID;
-      // return +result[0].id;
-    })();
+    return this._lastInsertID; // return +result[0].id;
   }
 
   toDatabase(value, column) {
@@ -399,6 +344,8 @@ class SQLite extends _database2.default {
         return super.fromDatabase(value, column);
     }
   }
+
 }
+
 exports.default = SQLite;
 //# sourceMappingURL=sqlite.js.map
