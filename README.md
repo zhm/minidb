@@ -8,7 +8,6 @@ A small object wrapper for PostgreSQL and SQLite. It has very little sugar and i
 npm install minidb
 ```
 
-
 ## Usage
 
 ```js
