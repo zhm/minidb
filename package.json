@@ -1,6 +1,6 @@
 {
   "name": "minidb",
-  "version": "0.15.1",
+  "version": "0.16.0",
   "description": "Mini ORM",
   "main": "dist/index.js",
   "repository": {
@@ -22,8 +22,8 @@
   "dependencies": {
     "bluebird": "^3.5.0",
     "humanize-duration": "^3.10.0",
-    "minipg": "^0.5.0",
-    "minisqlite": "^2.2.1",
+    "minipg": "^0.6.0",
+    "minisqlite": "^2.3.0",
     "mixmatch": "^0.0.2",
     "pg": "^4.5.6",
     "pg-format": "^1.0.2"
@@ -45,5 +45,6 @@
     "rimraf": "^3.0.2",
     "should": "^13.2.3",
     "source-map-support": "^0.5.19"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
